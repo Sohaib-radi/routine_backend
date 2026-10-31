@@ -1,0 +1,675 @@
+# French translation of django-unfold strings, maintained by the Routine project.
+# Unfold does not ship ar/fr catalogs; see docs/development/translations.md.
+msgid ""
+msgstr ""
+"Project-Id-Version: django-unfold 0.108.0 (Routine vendor catalog)\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-04 11:49+0300\n"
+"PO-Revision-Date: 2026-10-04 12:00+0000\n"
+"Last-Translator: Routine team\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: admin.py:44
+msgid "Select record"
+msgstr "Sélectionner l’enregistrement"
+
+#: admin.py:228
+msgid "Select action"
+msgstr "Sélectionner une action"
+
+#: forms.py:74
+msgid "Select action to run"
+msgstr "Sélectionnez l’action à exécuter"
+
+#: forms.py:132
+#, python-brace-format
+msgid ""
+"Raw passwords are not stored, so there is no way to see this user’s password,"
+" but you can change the password using <a href=\"{}\" class=\"text-"
+"primary-600 dark:text-primary-500\">this form</a>."
+msgstr ""
+"Les mots de passe en clair ne sont pas stockés, il n’est donc pas possible de"
+" voir le mot de passe de cet utilisateur, mais vous pouvez le modifier à "
+"l’aide de <a href=\"{}\" class=\"text-primary-600 dark:text-primary-500\">ce "
+"formulaire</a>."
+
+#: mixins/dataset_model_admin.py:56
+msgid ""
+"Items must be selected in order to perform actions on them. No items have "
+"been changed."
+msgstr ""
+"Des éléments doivent être sélectionnés afin d’appliquer les actions. Aucun "
+"élément n’a été modifié."
+
+#: mixins/dataset_model_admin.py:69
+msgid "Dataset not found. No action performed."
+msgstr "Jeu de données introuvable. Aucune action effectuée."
+
+#: mixins/formfield_model_admin.py:56 mixins/formfield_model_admin.py:75
+msgid "Select value"
+msgstr "Sélectionner une valeur"
+
+#: mixins/formfield_model_admin.py:145
+#, python-brace-format
+msgid ""
+"Field <strong class=\"font-semibold\">{field_name}</strong> is not an "
+"autocomplete field. Please add it to the `autocomplete_fields` list."
+msgstr ""
+"Le champ <strong class=\"font-semibold\">{field_name}</strong> n’est pas un "
+"champ d’autocomplétion. Ajoutez-le à la liste `autocomplete_fields`."
+
+#: mixins/nested_inlines_model_admin.py:31
+msgid "You can not create nested object without parent"
+msgstr "Impossible de créer un objet imbriqué sans parent"
+
+#: templates/admin/actions.html:23 templates/admin/dataset_actions.html:46
+msgid "Run the selected action"
+msgstr "Exécuter l’action sélectionnée"
+
+#: templates/admin/actions.html:24 templates/admin/dataset_actions.html:49
+msgid "Run"
+msgstr "Exécuter"
+
+#: templates/admin/actions.html:44 templates/admin/dataset_actions.html:17
+msgid "Click here to select the objects across all pages"
+msgstr "Cliquez ici pour sélectionner tous les objets sur l’ensemble des pages"
+
+#: templates/admin/actions.html:45 templates/admin/dataset_actions.html:18
+#, python-format
+msgid "Select all %(total_count)s %(module_name)s"
+msgstr "Sélectionner tous les %(total_count)s %(module_name)s"
+
+#: templates/admin/actions.html:51 templates/admin/dataset_actions.html:24
+msgid "Clear selection"
+msgstr "Effacer la sélection"
+
+#: templates/admin/app_index.html:5 templates/admin/base_site.html:3
+#: templates/admin/index.html:5 templates/admin/login.html:15
+#: templates/unfold/layouts/base.html:7
+msgid "Django site admin"
+msgstr "Site d’administration de Django"
+
+#: templates/admin/app_list.html:12
+#: templates/unfold/helpers/app_list_default.html:7
+#, python-format
+msgid "Models in the %(name)s application"
+msgstr "Modèles de l’application %(name)s"
+
+#: templates/admin/app_list.html:48 templates/unfold/helpers/app_list.html:57
+#: templates/unfold/helpers/app_list_default.html:55
+msgid "You don’t have permission to view or edit anything."
+msgstr "Vous n’avez pas la permission de voir ou de modifier quoi que ce soit."
+
+#: templates/admin/auth/user/add_form.html:5
+msgid "After you've created a user, you’ll be able to edit more user options."
+msgstr ""
+"Après avoir créé un utilisateur, vous pourrez modifier davantage d’options."
+
+#: templates/admin/auth/user/change_password.html:20
+#, python-format
+msgid "Enter a new password for the user <strong>%(username)s</strong>."
+msgstr ""
+"Saisissez un nouveau mot de passe pour l’utilisateur "
+"<strong>%(username)s</strong>."
+
+#: templates/admin/auth/user/change_password.html:30
+#: templates/registration/password_change_form.html:32
+#: templates/unfold/helpers/account_links.html:18
+msgid "Change password"
+msgstr "Modifier le mot de passe"
+
+#: templates/admin/change_form_object_tools.html:6
+msgid "History"
+msgstr "Historique"
+
+#: templates/admin/change_form_object_tools.html:12
+msgid "View on site"
+msgstr "Voir sur le site"
+
+#: templates/admin/delete_confirmation.html:16
+#, python-format
+msgid ""
+"Deleting the %(object_name)s '%(escaped_object)s' would result in deleting "
+"related objects, but your account doesn't have permission to delete the "
+"following types of objects:"
+msgstr ""
+"Supprimer l’objet %(object_name)s « %(escaped_object)s » provoquerait la "
+"suppression d’objets qui lui sont liés, mais votre compte ne possède pas la "
+"permission de supprimer les types d’objets suivants :"
+
+#: templates/admin/delete_confirmation.html:32
+#, python-format
+msgid ""
+"Deleting the %(object_name)s '%(escaped_object)s' would require deleting the "
+"following protected related objects:"
+msgstr ""
+"Supprimer l’objet %(object_name)s « %(escaped_object)s » provoquerait la "
+"suppression des objets liés et protégés suivants :"
+
+#: templates/admin/delete_confirmation.html:48
+#, python-format
+msgid ""
+"Are you sure you want to delete the %(object_name)s \"%(escaped_object)s\"? "
+"All of the following related items will be deleted:"
+msgstr ""
+"Voulez-vous vraiment supprimer l’objet %(object_name)s « %(escaped_object)s »"
+" ? Les éléments suivants sont liés à celui-ci et seront aussi supprimés :"
+
+#: templates/admin/delete_confirmation.html:55
+#: templates/admin/delete_selected_confirmation.html:49
+msgid "Objects"
+msgstr "Objets"
+
+#: templates/admin/delete_selected_confirmation.html:15
+#, python-format
+msgid ""
+"Deleting the selected %(objects_name)s would result in deleting related "
+"objects, but your account doesn't have permission to delete the following "
+"types of objects:"
+msgstr ""
+"La suppression des objets %(objects_name)s sélectionnés provoquerait la "
+"suppression d’objets liés, mais votre compte n’est pas autorisé à supprimer "
+"les types d’objet suivants :"
+
+#: templates/admin/delete_selected_confirmation.html:28
+#, python-format
+msgid ""
+"Deleting the selected %(objects_name)s would require deleting the following "
+"protected related objects:"
+msgstr ""
+"La suppression des objets %(objects_name)s sélectionnés provoquerait la "
+"suppression des objets liés et protégés suivants :"
+
+#: templates/admin/delete_selected_confirmation.html:42
+#, python-format
+msgid ""
+"Are you sure you want to delete the selected %(objects_name)s? All of the "
+"following objects and their related items will be deleted:"
+msgstr ""
+"Voulez-vous vraiment supprimer les objets %(objects_name)s sélectionnés ? "
+"Tous les objets suivants et les éléments liés seront supprimés :"
+
+#: templates/admin/filter.html:11 templates/admin/filter.html:32
+#, python-format
+msgid " By %(filter_title)s "
+msgstr " Par %(filter_title)s "
+
+#: templates/admin/includes/object_delete_summary.html:5
+msgid "Summary"
+msgstr "Résumé"
+
+#: templates/admin/login.html:15
+msgid "Welcome back to"
+msgstr "Bon retour sur"
+
+#: templates/admin/login.html:26
+#, python-format
+msgid ""
+"You are authenticated as %(username)s, but are not authorized to access this "
+"page. Would you like to login to a different account?"
+msgstr ""
+"Vous êtes authentifié sous le nom %(username)s, mais vous n’êtes pas autorisé"
+" à accéder à cette page. Souhaitez-vous vous connecter avec un autre compte "
+"utilisateur ?"
+
+#: templates/admin/login.html:47
+msgid "Log in"
+msgstr "Connexion"
+
+#: templates/admin/login.html:55
+msgid "Forgotten your password or username?"
+msgstr "Mot de passe ou nom d’utilisateur oublié ?"
+
+#: templates/admin/object_history.html:11
+msgid "Date/time"
+msgstr "Date/heure"
+
+#: templates/admin/object_history.html:15
+msgid "User"
+msgstr "Utilisateur"
+
+#: templates/admin/object_history.html:19
+msgid "Action"
+msgstr "Action"
+
+#: templates/admin/object_history.html:59
+msgid "entry"
+msgid_plural "entries"
+msgstr[0] "entrée"
+msgstr[1] "entrées"
+
+#: templates/admin/object_history.html:62
+msgid ""
+"This object doesn’t have a change history. It probably wasn’t added via this "
+"admin site."
+msgstr ""
+"Cet objet n’a pas d’historique de modification. Il n’a probablement pas été "
+"ajouté au moyen de ce site d’administration."
+
+#: templates/admin/pagination.html:12
+#: templates/unfold/helpers/welcomemsg.html:23
+msgid "Show all"
+msgstr "Tout afficher"
+
+#: templates/admin/pagination.html:19 templates/admin/submit_line.html:10
+msgid "Save"
+msgstr "Enregistrer"
+
+#: templates/admin/search_form.html:16 templates/unfold/helpers/command.html:20
+msgid "Type to search"
+msgstr "Tapez pour rechercher"
+
+#: templates/admin/submit_line.html:29
+msgid "Save and continue editing"
+msgstr "Enregistrer et continuer les modifications"
+
+#: templates/admin/submit_line.html:31
+msgid "Save and view"
+msgstr "Enregistrer et afficher"
+
+#: templates/admin/submit_line.html:38
+msgid "Save and add another"
+msgstr "Enregistrer et ajouter un nouveau"
+
+#: templates/admin/submit_line.html:44
+msgid "Save as new"
+msgstr "Enregistrer en tant que nouveau"
+
+#: templates/admin/submit_line.html:54
+msgid "Close"
+msgstr "Fermer"
+
+#: templates/admin/submit_line.html:63
+msgid "Delete"
+msgstr "Supprimer"
+
+#: templates/registration/logged_out.html:14
+msgid "You have been successfully logged out from the administration"
+msgstr "Vous avez été déconnecté de l’administration"
+
+#: templates/registration/logged_out.html:18
+msgid "Thanks for spending some quality time with the web site today."
+msgstr "Merci pour le temps que vous avez accordé à ce site aujourd’hui."
+
+#: templates/registration/logged_out.html:23
+msgid "Log in again"
+msgstr "Connectez-vous à nouveau"
+
+#: templates/registration/password_change_done.html:8
+msgid "Your password was changed."
+msgstr "Votre mot de passe a été modifié."
+
+#: templates/registration/password_change_form.html:19
+msgid ""
+"Please enter your old password, for security’s sake, and then enter your new "
+"password twice so we can verify you typed it in correctly."
+msgstr ""
+"Pour des raisons de sécurité, saisissez votre ancien mot de passe puis votre "
+"nouveau mot de passe à deux reprises afin de vérifier qu’il est correctement "
+"saisi."
+
+#: templates/unfold/components/table.html:113
+msgid "No data"
+msgstr "Aucune donnée"
+
+#: templates/unfold/helpers/account_links.html:5
+msgid "View site"
+msgstr "Voir le site"
+
+#: templates/unfold/helpers/account_links.html:28
+msgid "Log out"
+msgstr "Déconnexion"
+
+#: templates/unfold/helpers/add_link.html:5
+#: templates/unfold/helpers/add_link.html:8
+#: templates/unfold/helpers/empty_results.html:4
+#, python-format
+msgid "Add %(name)s"
+msgstr "Ajouter %(name)s"
+
+#: templates/unfold/helpers/app_list_all.html:11
+msgid "All applications"
+msgstr "Toutes les applications"
+
+#: templates/unfold/helpers/app_list_default.html:31
+#: templates/unfold/helpers/edit_inline/inline_links.html:17
+msgid "View"
+msgstr "Afficher"
+
+#: templates/unfold/helpers/app_list_default.html:35
+#: templates/unfold/helpers/edit_inline/inline_links.html:7
+msgid "Change"
+msgstr "Modifier"
+
+#: templates/unfold/helpers/app_list_default.html:42
+#: templates/unfold_crispy/layout/table_inline_formset.html:73
+msgid "Add"
+msgstr "Ajouter"
+
+#: templates/unfold/helpers/boolean.html:4
+msgid "Unknown"
+msgstr "Inconnu"
+
+#: templates/unfold/helpers/boolean.html:4
+msgid "True"
+msgstr "Vrai"
+
+#: templates/unfold/helpers/boolean.html:4
+msgid "False"
+msgstr "Faux"
+
+#: templates/unfold/helpers/change_list_filter_actions.html:7
+msgid "Apply Filters"
+msgstr "Appliquer les filtres"
+
+#: templates/unfold/helpers/change_list_filter_actions.html:16
+msgid "Hide counts"
+msgstr "Masquer les nombres"
+
+#: templates/unfold/helpers/change_list_filter_actions.html:20
+msgid "Show counts"
+msgstr "Afficher les nombres"
+
+#: templates/unfold/helpers/change_list_filter_actions.html:27
+msgid "Clear all filters"
+msgstr "Effacer tous les filtres"
+
+#: templates/unfold/helpers/change_list_filter_button.html:5
+msgid "Filters"
+msgstr "Filtres"
+
+#: templates/unfold/helpers/change_list_headers.html:37
+msgid "Toggle sorting"
+msgstr "Inverser le tri"
+
+#: templates/unfold/helpers/change_list_headers.html:45
+msgid "Remove from sorting"
+msgstr "Enlever du tri"
+
+#: templates/unfold/helpers/change_list_headers.html:51
+#, python-format
+msgid "Sorting priority: %(priority_number)s"
+msgstr "Priorité de tri : %(priority_number)s"
+
+#: templates/unfold/helpers/command_help.html:6
+#: templates/unfold/helpers/shortcuts.html:88
+msgid "Navigate"
+msgstr "Naviguer"
+
+#: templates/unfold/helpers/command_help.html:17
+msgid "Select"
+msgstr "Sélectionner"
+
+#: templates/unfold/helpers/command_help.html:27
+#: templates/unfold/helpers/shortcuts.html:123
+msgid "Clear"
+msgstr "Effacer"
+
+#: templates/unfold/helpers/command_history.html:6
+msgid "Recent searches"
+msgstr "Recherches récentes"
+
+#: templates/unfold/helpers/command_results.html:45
+msgid "Nothing matched your search"
+msgstr "Aucun résultat ne correspond à votre recherche"
+
+#: templates/unfold/helpers/command_results.html:54
+#, python-format
+msgid ""
+"\n"
+"            Found <span class=\"font-medium text-important\">%(counter)s</span> result in %(time)s seconds\n"
+"        "
+msgid_plural ""
+"\n"
+"            Found <span class=\"font-medium text-important\">%(counter)s</span> results in %(time)s seconds\n"
+"        "
+msgstr[0] ""
+"\n"
+"            <span class=\"font-medium text-important\">%(counter)s</span> résultat trouvé en %(time)s secondes\n"
+"        "
+msgstr[1] ""
+"\n"
+"            <span class=\"font-medium text-important\">%(counter)s</span> résultats trouvés en %(time)s secondes\n"
+"        "
+
+#: templates/unfold/helpers/delete_submit_line.html:5
+msgid "No, take me back"
+msgstr "Non, revenir à la page précédente"
+
+#: templates/unfold/helpers/delete_submit_line.html:9
+msgid "Yes, I’m sure"
+msgstr "Oui, je suis sûr"
+
+#: templates/unfold/helpers/dialog.html:37
+msgid "Cancel"
+msgstr "Annuler"
+
+#: templates/unfold/helpers/dialog.html:48
+msgid "Submit"
+msgstr "Envoyer"
+
+#: templates/unfold/helpers/display_header.html:10
+msgid "Record picture"
+msgstr "Image de l’enregistrement"
+
+#: templates/unfold/helpers/edit_inline/inline_delete_undo.html:5
+msgid "This item will be deleted."
+msgstr "Cet élément sera supprimé."
+
+#: templates/unfold/helpers/edit_inline/inline_delete_undo.html:8
+msgid "Click to cancel"
+msgstr "Cliquez pour annuler"
+
+#: templates/unfold/helpers/empty_results.html:14
+msgid "No results found"
+msgstr "Aucun résultat trouvé"
+
+#: templates/unfold/helpers/empty_results.html:18
+msgid ""
+"This page yielded into no results. Create a new item or reset your filters."
+msgstr ""
+"Cette page ne contient aucun résultat. Créez un nouvel élément ou "
+"réinitialisez les filtres."
+
+#: templates/unfold/helpers/empty_results.html:32
+msgid "Reset filters"
+msgstr "Réinitialiser les filtres"
+
+#: templates/unfold/helpers/field_readonly_value_file.html:8
+#: templates/unfold/widgets/clearable_file_input.html:6
+msgid "Image preview"
+msgstr "Aperçu de l’image"
+
+#: templates/unfold/helpers/field_readonly_value_file.html:13
+msgid "Click to download"
+msgstr "Cliquez pour télécharger"
+
+#: templates/unfold/helpers/header_back_button.html:9
+#: templates/unfold/helpers/header_back_button.html:19
+msgid "Go back"
+msgstr "Retour"
+
+#: templates/unfold/helpers/history.html:8
+msgid "Recent actions"
+msgstr "Actions récentes"
+
+#: templates/unfold/helpers/history.html:36
+msgid "Unknown content"
+msgstr "Contenu inconnu"
+
+#: templates/unfold/helpers/messages/errornote.html:5
+msgid "Please correct the error below."
+msgid_plural "Please correct the errors below."
+msgstr[0] "Corrigez l’erreur ci-dessous."
+msgstr[1] "Corrigez les erreurs ci-dessous."
+
+#: templates/unfold/helpers/pagination_infinite.html:5
+msgid "Previous"
+msgstr "Précédent"
+
+#: templates/unfold/helpers/pagination_infinite.html:9
+msgid "Next"
+msgstr "Suivant"
+
+#: templates/unfold/helpers/search.html:9
+msgid "Search apps and models..."
+msgstr "Rechercher des applications et des modèles…"
+
+#: templates/unfold/helpers/shortcuts.html:8
+msgid "Available shortcuts"
+msgstr "Raccourcis disponibles"
+
+#: templates/unfold/helpers/shortcuts.html:15
+msgid "Global shortcuts"
+msgstr "Raccourcis généraux"
+
+#: templates/unfold/helpers/shortcuts.html:20
+msgid "Open command tool"
+msgstr "Ouvrir l’outil de commande"
+
+#: templates/unfold/helpers/shortcuts.html:32
+msgid "Open shortcuts list"
+msgstr "Ouvrir la liste des raccourcis"
+
+#: templates/unfold/helpers/shortcuts.html:39
+msgid "Toggle sidebar"
+msgstr "Afficher ou masquer la barre latérale"
+
+#: templates/unfold/helpers/shortcuts.html:46
+msgid "Toggle dark/light mode"
+msgstr "Basculer entre mode sombre et clair"
+
+#: templates/unfold/helpers/shortcuts.html:60
+msgid "Changelist shortcuts"
+msgstr "Raccourcis de la liste"
+
+#: templates/unfold/helpers/shortcuts.html:65
+msgid "Toggle filter"
+msgstr "Afficher ou masquer les filtres"
+
+#: templates/unfold/helpers/shortcuts.html:72
+msgid "Create new record"
+msgstr "Créer un nouvel enregistrement"
+
+#: templates/unfold/helpers/shortcuts.html:82
+msgid "Command tool shortcuts"
+msgstr "Raccourcis de l’outil de commande"
+
+#: templates/unfold/helpers/shortcuts.html:99
+msgid "Open selection"
+msgstr "Ouvrir la sélection"
+
+#: templates/unfold/helpers/shortcuts.html:109
+msgid "Open selection in new tab"
+msgstr "Ouvrir la sélection dans un nouvel onglet"
+
+#: templates/unfold/helpers/site_branding.html:3
+#: templates/unfold/helpers/site_branding.html:6
+msgid "Django administration"
+msgstr "Administration de Django"
+
+#: templates/unfold/helpers/site_icon.html:7
+#: templates/unfold/helpers/site_icon.html:9
+#: templates/unfold/helpers/site_icon.html:11
+#: templates/unfold/helpers/site_logo.html:5
+#: templates/unfold/helpers/site_logo.html:7
+#: templates/unfold/helpers/site_logo.html:9
+msgid "Home"
+msgstr "Accueil"
+
+#: templates/unfold/helpers/tab_items.html:16
+msgid "General"
+msgstr "Général"
+
+#: templates/unfold/helpers/theme_switch.html:9
+#: templates/unfold/helpers/theme_switch_dropdown.html:16
+msgid "Light"
+msgstr "Clair"
+
+#: templates/unfold/helpers/theme_switch.html:16
+#: templates/unfold/helpers/theme_switch_dropdown.html:23
+msgid "Dark"
+msgstr "Sombre"
+
+#: templates/unfold/helpers/theme_switch.html:23
+#: templates/unfold/helpers/theme_switch_dropdown.html:30
+msgid "System"
+msgstr "Système"
+
+#: templates/unfold/helpers/unauthenticated_header.html:6
+msgid "Return to site"
+msgstr "Retour au site"
+
+#: templates/unfold/helpers/welcomemsg.html:23
+#, python-format
+msgid "%(counter)s result"
+msgid_plural "%(counter)s results"
+msgstr[0] "%(counter)s résultat"
+msgstr[1] "%(counter)s résultats"
+
+#: templates/unfold/helpers/welcomemsg.html:23
+#, python-format
+msgid "%(full_result_count)s total"
+msgstr "%(full_result_count)s résultats"
+
+#: templates/unfold/widgets/clearable_file_input.html:25
+#: templates/unfold/widgets/clearable_file_input_small.html:18
+msgid "Choose file to upload"
+msgstr "Choisir un fichier à téléverser"
+
+#: templates/unfold/widgets/password_toggle.html:5
+msgid "Toggle password visibility"
+msgstr "Afficher ou masquer le mot de passe"
+
+#: templates/unfold/widgets/related_widget_wrapper.html:28
+#: templates/unfold/widgets/related_widget_wrapper.html:29
+#, python-format
+msgid "Change selected %(model)s"
+msgstr "Modifier l’objet %(model)s sélectionné"
+
+#: templates/unfold/widgets/related_widget_wrapper.html:34
+#: templates/unfold/widgets/related_widget_wrapper.html:35
+#, python-format
+msgid "Add another %(model)s"
+msgstr "Ajouter un autre objet %(model)s"
+
+#: templates/unfold/widgets/related_widget_wrapper.html:40
+#: templates/unfold/widgets/related_widget_wrapper.html:41
+#, python-format
+msgid "View selected %(model)s"
+msgstr "Afficher l'objet %(model)s sélectionné"
+
+#: templates/unfold/widgets/related_widget_wrapper.html:46
+#: templates/unfold/widgets/related_widget_wrapper.html:47
+#, python-format
+msgid "Delete selected %(model)s"
+msgstr "Supprimer l’objet %(model)s sélectionné"
+
+#: templates/unfold_crispy/layout/table_inline_formset.html:75
+msgid "Add row"
+msgstr "Ajouter une ligne"
+
+#: templatetags/unfold.py:783
+msgid "Welcome"
+msgstr "Bienvenue"
+
+#: templatetags/unfold_list.py:100
+msgid "Select all objects on this page for an action"
+msgstr "Sélectionner tous les objets de cette page en vue d’une action"
+
+#: widgets.py:593 widgets.py:634
+msgid "Date"
+msgstr "Date"
+
+#: widgets.py:594 widgets.py:639
+msgid "Time"
+msgstr "Heure"
+
+#: widgets.py:1011
+msgid "Select currency"
+msgstr "Sélectionner la devise"

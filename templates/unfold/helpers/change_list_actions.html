@@ -1,0 +1,20 @@
+{% comment %}
+Override of Unfold 0.108's unfold/helpers/change_list_actions.html, identical except the
+bar's offset: Unfold moves the fixed actions bar right of the sidebar with a physical
+"left"; in right-to-left languages the sidebar is on the right, so the bar is offset on
+the right instead (otherwise it slides under the sidebar in Arabic). Re-check after
+upgrading Unfold.
+{% endcomment %}
+{% load admin_list %}
+
+{% if actions_on_top %}
+    {% if cl.search_fields or action_form or cl.has_filters %}
+        <div class="bottom-0 right-0 hidden group-has-[input.action-select:checked]:flex fixed gap-3 lg:bottom-0 lg:h-[64px] items-center p-3 z-50 lg:flex-row" {% if not is_popup %}x-bind:style="document.documentElement.dir === 'rtl' ? {left: '0px', right: sidebarOpen ? sidebarWidth + 'px' : '0px'} : {left: sidebarOpen ? sidebarWidth + 'px' : '0px'}"{% endif %}>
+            <div id="changelist-actions-wrapper" class="grow group changelist-actions">
+                {% if action_form %}
+                    {% admin_actions %}
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+{% endif %}

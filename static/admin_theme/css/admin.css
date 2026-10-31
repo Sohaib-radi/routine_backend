@@ -1,0 +1,111 @@
+/*
+ * Routine admin styles, loaded after Unfold's stylesheet (UNFOLD["STYLES"]).
+ *
+ * Brand colours are configured in config/unfold.py; the only colour defined
+ * here is the light sage accent (primary-300), which Unfold has no setting
+ * for. It is used only on indigo, where its contrast is 8.16:1. On white it
+ * would be 1.76:1, so it must never colour text or controls on light surfaces.
+ */
+
+/* Readex Pro, self-hosted (SIL Open Font License 1.1, see fonts/readex-pro/OFL.txt).
+ * One variable font per script subset; the weight axis spans 160 to 700. */
+@font-face {
+    font-family: "Readex Pro";
+    font-style: normal;
+    font-weight: 160 700;
+    font-display: swap;
+    src: url("../fonts/readex-pro/readex-pro-arabic.woff2") format("woff2");
+    unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF,
+        U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+
+@font-face {
+    font-family: "Readex Pro";
+    font-style: normal;
+    font-weight: 160 700;
+    font-display: swap;
+    src: url("../fonts/readex-pro/readex-pro-latin-ext.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+        U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+        U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: "Readex Pro";
+    font-style: normal;
+    font-weight: 160 700;
+    font-display: swap;
+    src: url("../fonts/readex-pro/readex-pro-latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+        U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+    /* Unfold reads its typeface from --font-sans. */
+    --font-sans: "Readex Pro", ui-sans-serif, system-ui, sans-serif;
+    --routine-accent: #BCC6B7;
+}
+
+/* Regular text, bold headings. */
+body {
+    font-weight: 400;
+}
+
+h1, h2, h3, h4 {
+    font-weight: 700;
+}
+
+/* Accent on indigo only: text selection is indigo on sage (8.16:1). */
+::selection {
+    background-color: var(--routine-accent);
+    color: var(--color-base-900);
+}
+
+/* In dark mode the surfaces are indigo, so the accent can mark the active
+ * sidebar item. Unfold puts the theme class and dir on <html>. */
+html.dark #nav-sidebar-apps a.active {
+    box-shadow: inset 3px 0 0 var(--routine-accent);
+}
+
+html.dark[dir="rtl"] #nav-sidebar-apps a.active {
+    box-shadow: inset -3px 0 0 var(--routine-accent);
+}
+
+/*
+ * Right-to-left fixes. Unfold 0.108.0 uses physical left/right utilities in a
+ * few places, which do not flip when Arabic sets dir="rtl" on <html>.
+ */
+
+/* Sidebar items: the icon's gap is a margin-right (mr-3). */
+html[dir="rtl"] #nav-sidebar-apps .material-symbols-outlined.mr-3 {
+    margin-right: 0;
+    margin-left: 0.75rem;
+}
+
+/* Login header: the theme switcher is pushed away with margin-left: auto,
+ * which in RTL pushes it against the "Return to site" link instead. */
+html[dir="rtl"] body.login .ml-auto {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+/* Directional arrows on the login page point the reading direction. */
+html[dir="rtl"] body.login a .material-symbols-outlined,
+html[dir="rtl"] body.login button[type="submit"] .material-symbols-outlined {
+    transform: scaleX(-1);
+}
+
+/* Numbers, emails and URLs are left-to-right content even in Arabic: without
+ * this, "-1001234567890" is displayed as "1001234567890-". */
+html[dir="rtl"] input[type="number"],
+html[dir="rtl"] input[type="email"],
+html[dir="rtl"] input[type="url"] {
+    direction: ltr;
+    text-align: right;
+}
+
+/* Free text follows its own first strong character (English text stays LTR). */
+html[dir="rtl"] input[type="text"],
+html[dir="rtl"] textarea {
+    unicode-bidi: plaintext;
+}

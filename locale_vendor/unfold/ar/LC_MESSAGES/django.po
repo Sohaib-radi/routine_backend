@@ -1,0 +1,692 @@
+# Arabic translation of django-unfold strings, maintained by the Routine project.
+# Unfold does not ship ar/fr catalogs; see docs/development/translations.md.
+msgid ""
+msgstr ""
+"Project-Id-Version: django-unfold 0.108.0 (Routine vendor catalog)\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-04 11:49+0300\n"
+"PO-Revision-Date: 2026-10-04 12:00+0000\n"
+"Last-Translator: Routine team\n"
+"Language-Team: Arabic\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+
+#: admin.py:44
+msgid "Select record"
+msgstr "تحديد السجل"
+
+#: admin.py:228
+msgid "Select action"
+msgstr "اختر إجراءً"
+
+#: forms.py:74
+msgid "Select action to run"
+msgstr "اختر الإجراء المراد تنفيذه"
+
+#: forms.py:132
+#, python-brace-format
+msgid ""
+"Raw passwords are not stored, so there is no way to see this user’s password,"
+" but you can change the password using <a href=\"{}\" class=\"text-"
+"primary-600 dark:text-primary-500\">this form</a>."
+msgstr ""
+"لا تُخزَّن كلمات المرور الأصلية، لذا لا توجد طريقة لرؤية كلمة مرور هذا "
+"المستخدم، لكن يمكنك تغييرها باستخدام <a href=\"{}\" class=\"text-primary-600 "
+"dark:text-primary-500\">هذا النموذج</a>."
+
+#: mixins/dataset_model_admin.py:56
+msgid ""
+"Items must be selected in order to perform actions on them. No items have "
+"been changed."
+msgstr "عليك تحديد العناصر لتطبيق الإجراءات عليها. لم يتغيّر أيّ عنصر."
+
+#: mixins/dataset_model_admin.py:69
+msgid "Dataset not found. No action performed."
+msgstr "لم يُعثر على مجموعة البيانات. لم يُنفَّذ أي إجراء."
+
+#: mixins/formfield_model_admin.py:56 mixins/formfield_model_admin.py:75
+msgid "Select value"
+msgstr "اختر قيمة"
+
+#: mixins/formfield_model_admin.py:145
+#, python-brace-format
+msgid ""
+"Field <strong class=\"font-semibold\">{field_name}</strong> is not an "
+"autocomplete field. Please add it to the `autocomplete_fields` list."
+msgstr ""
+"الحقل <strong class=\"font-semibold\">{field_name}</strong> ليس حقل إكمال "
+"تلقائي. يُرجى إضافته إلى القائمة `autocomplete_fields`."
+
+#: mixins/nested_inlines_model_admin.py:31
+msgid "You can not create nested object without parent"
+msgstr "لا يمكن إنشاء عنصر متداخل بدون عنصر أب"
+
+#: templates/admin/actions.html:23 templates/admin/dataset_actions.html:46
+msgid "Run the selected action"
+msgstr "نفذ الإجراء المحدّد"
+
+#: templates/admin/actions.html:24 templates/admin/dataset_actions.html:49
+msgid "Run"
+msgstr "تنفيذ"
+
+#: templates/admin/actions.html:44 templates/admin/dataset_actions.html:17
+msgid "Click here to select the objects across all pages"
+msgstr "اضغط هنا لتحديد جميع العناصر في جميع الصفحات"
+
+#: templates/admin/actions.html:45 templates/admin/dataset_actions.html:18
+#, python-format
+msgid "Select all %(total_count)s %(module_name)s"
+msgstr "اختيار %(total_count)s %(module_name)s جميعها"
+
+#: templates/admin/actions.html:51 templates/admin/dataset_actions.html:24
+msgid "Clear selection"
+msgstr "إزالة الاختيار"
+
+#: templates/admin/app_index.html:5 templates/admin/base_site.html:3
+#: templates/admin/index.html:5 templates/admin/login.html:15
+#: templates/unfold/layouts/base.html:7
+msgid "Django site admin"
+msgstr "إدارة موقع جانغو"
+
+#: templates/admin/app_list.html:12
+#: templates/unfold/helpers/app_list_default.html:7
+#, python-format
+msgid "Models in the %(name)s application"
+msgstr "النماذج في تطبيق %(name)s"
+
+#: templates/admin/app_list.html:48 templates/unfold/helpers/app_list.html:57
+#: templates/unfold/helpers/app_list_default.html:55
+msgid "You don’t have permission to view or edit anything."
+msgstr "ليس لديك إذن لعرض أو تغديل أي شيء."
+
+#: templates/admin/auth/user/add_form.html:5
+msgid "After you've created a user, you’ll be able to edit more user options."
+msgstr "بعد إنشاء المستخدم، ستتمكن من تعديل المزيد من خيارات المستخدم."
+
+#: templates/admin/auth/user/change_password.html:20
+#, python-format
+msgid "Enter a new password for the user <strong>%(username)s</strong>."
+msgstr "أدخل كلمة مرور جديدة للمستخدم <strong>%(username)s</strong>."
+
+#: templates/admin/auth/user/change_password.html:30
+#: templates/registration/password_change_form.html:32
+#: templates/unfold/helpers/account_links.html:18
+msgid "Change password"
+msgstr "غيّر كلمة المرور"
+
+#: templates/admin/change_form_object_tools.html:6
+msgid "History"
+msgstr "تاريخ"
+
+#: templates/admin/change_form_object_tools.html:12
+msgid "View on site"
+msgstr "مشاهدة على الموقع"
+
+#: templates/admin/delete_confirmation.html:16
+#, python-format
+msgid ""
+"Deleting the %(object_name)s '%(escaped_object)s' would result in deleting "
+"related objects, but your account doesn't have permission to delete the "
+"following types of objects:"
+msgstr ""
+"حذف العنصر %(object_name)s '%(escaped_object)s' سيتسبب بحذف العناصر المرتبطة "
+"به، إلا أنك لا تملك صلاحية حذف العناصر التالية:"
+
+#: templates/admin/delete_confirmation.html:32
+#, python-format
+msgid ""
+"Deleting the %(object_name)s '%(escaped_object)s' would require deleting the "
+"following protected related objects:"
+msgstr ""
+"حذف %(object_name)s '%(escaped_object)s' يتطلب حذف العناصر المرتبطة المحمية "
+"التالية:"
+
+#: templates/admin/delete_confirmation.html:48
+#, python-format
+msgid ""
+"Are you sure you want to delete the %(object_name)s \"%(escaped_object)s\"? "
+"All of the following related items will be deleted:"
+msgstr ""
+"متأكد أنك تريد حذف العنصر %(object_name)s \"%(escaped_object)s\"؟ سيتم حذف "
+"جميع العناصر التالية المرتبطة به:"
+
+#: templates/admin/delete_confirmation.html:55
+#: templates/admin/delete_selected_confirmation.html:49
+msgid "Objects"
+msgstr "عناصر"
+
+#: templates/admin/delete_selected_confirmation.html:15
+#, python-format
+msgid ""
+"Deleting the selected %(objects_name)s would result in deleting related "
+"objects, but your account doesn't have permission to delete the following "
+"types of objects:"
+msgstr ""
+"حذف عناصر %(objects_name)s المُحدّدة سيتسبب بحذف العناصر المرتبطة، إلا أن "
+"حسابك ليس له صلاحية حذف أنواع العناصر التالية:"
+
+#: templates/admin/delete_selected_confirmation.html:28
+#, python-format
+msgid ""
+"Deleting the selected %(objects_name)s would require deleting the following "
+"protected related objects:"
+msgstr ""
+"حذف عناصر %(objects_name)s المحدّدة قد يتطلب حذف العناصر المحميّة المرتبطة "
+"التالية:"
+
+#: templates/admin/delete_selected_confirmation.html:42
+#, python-format
+msgid ""
+"Are you sure you want to delete the selected %(objects_name)s? All of the "
+"following objects and their related items will be deleted:"
+msgstr ""
+"أأنت متأكد أنك تريد حذف عناصر %(objects_name)s المحددة؟ جميع العناصر التالية "
+"والعناصر المرتبطة بها سيتم حذفها:"
+
+#: templates/admin/filter.html:11 templates/admin/filter.html:32
+#, python-format
+msgid " By %(filter_title)s "
+msgstr " حسب %(filter_title)s "
+
+#: templates/admin/includes/object_delete_summary.html:5
+msgid "Summary"
+msgstr "ملخص"
+
+#: templates/admin/login.html:15
+msgid "Welcome back to"
+msgstr "مرحبًا بعودتك إلى"
+
+#: templates/admin/login.html:26
+#, python-format
+msgid ""
+"You are authenticated as %(username)s, but are not authorized to access this "
+"page. Would you like to login to a different account?"
+msgstr ""
+"أنت مسجل الدخول بإسم المستخدم  %(username)s, ولكنك غير مخول للوصول لهذه "
+"الصفحة. هل ترغب بتسجيل الدخول بحساب آخر؟"
+
+#: templates/admin/login.html:47
+msgid "Log in"
+msgstr "ادخل"
+
+#: templates/admin/login.html:55
+msgid "Forgotten your password or username?"
+msgstr "نسيت كلمة المرور أو اسم المستخدم؟"
+
+#: templates/admin/object_history.html:11
+msgid "Date/time"
+msgstr "التاريخ/الوقت"
+
+#: templates/admin/object_history.html:15
+msgid "User"
+msgstr "المستخدم"
+
+#: templates/admin/object_history.html:19
+msgid "Action"
+msgstr "إجراء"
+
+#: templates/admin/object_history.html:59
+msgid "entry"
+msgid_plural "entries"
+msgstr[0] "إدخال"
+msgstr[1] "إدخال"
+msgstr[2] "الإدخالات"
+msgstr[3] "الإدخالات"
+msgstr[4] "الإدخالات"
+msgstr[5] "الإدخالات"
+
+#: templates/admin/object_history.html:62
+msgid ""
+"This object doesn’t have a change history. It probably wasn’t added via this "
+"admin site."
+msgstr ""
+"ليس لهذا العنصر سجلّ تغييرات، على الأغلب أنه لم يُنشأ من خلال نظام إدارة "
+"الموقع."
+
+#: templates/admin/pagination.html:12
+#: templates/unfold/helpers/welcomemsg.html:23
+msgid "Show all"
+msgstr "أظهر الكل"
+
+#: templates/admin/pagination.html:19 templates/admin/submit_line.html:10
+msgid "Save"
+msgstr "احفظ"
+
+#: templates/admin/search_form.html:16 templates/unfold/helpers/command.html:20
+msgid "Type to search"
+msgstr "اكتب للبحث"
+
+#: templates/admin/submit_line.html:29
+msgid "Save and continue editing"
+msgstr "احفظ واستمر بالتعديل"
+
+#: templates/admin/submit_line.html:31
+msgid "Save and view"
+msgstr "احفظ واستعرض"
+
+#: templates/admin/submit_line.html:38
+msgid "Save and add another"
+msgstr "احفظ وأضف آخر"
+
+#: templates/admin/submit_line.html:44
+msgid "Save as new"
+msgstr "احفظ كجديد"
+
+#: templates/admin/submit_line.html:54
+msgid "Close"
+msgstr "إغلاق"
+
+#: templates/admin/submit_line.html:63
+msgid "Delete"
+msgstr "احذف"
+
+#: templates/registration/logged_out.html:14
+msgid "You have been successfully logged out from the administration"
+msgstr "تم تسجيل خروجك من الإدارة بنجاح"
+
+#: templates/registration/logged_out.html:18
+msgid "Thanks for spending some quality time with the web site today."
+msgstr "شكرا لقضاء بعض الوقت الجيد في الموقع اليوم."
+
+#: templates/registration/logged_out.html:23
+msgid "Log in again"
+msgstr "ادخل مجدداً"
+
+#: templates/registration/password_change_done.html:8
+msgid "Your password was changed."
+msgstr "تمّ تغيير كلمة مرورك."
+
+#: templates/registration/password_change_form.html:19
+msgid ""
+"Please enter your old password, for security’s sake, and then enter your new "
+"password twice so we can verify you typed it in correctly."
+msgstr ""
+"رجاءً أدخل كلمة المرور القديمة، للأمان، ثم أدخل كلمة المرور الجديدة مرتين "
+"لنتأكد بأنك قمت بإدخالها بشكل صحيح."
+
+#: templates/unfold/components/table.html:113
+msgid "No data"
+msgstr "لا توجد بيانات"
+
+#: templates/unfold/helpers/account_links.html:5
+msgid "View site"
+msgstr "عرض الموقع"
+
+#: templates/unfold/helpers/account_links.html:28
+msgid "Log out"
+msgstr "تسجيل الخروج"
+
+#: templates/unfold/helpers/add_link.html:5
+#: templates/unfold/helpers/add_link.html:8
+#: templates/unfold/helpers/empty_results.html:4
+#, python-format
+msgid "Add %(name)s"
+msgstr "أضف %(name)s"
+
+#: templates/unfold/helpers/app_list_all.html:11
+msgid "All applications"
+msgstr "جميع التطبيقات"
+
+#: templates/unfold/helpers/app_list_default.html:31
+#: templates/unfold/helpers/edit_inline/inline_links.html:17
+msgid "View"
+msgstr "استعراض"
+
+#: templates/unfold/helpers/app_list_default.html:35
+#: templates/unfold/helpers/edit_inline/inline_links.html:7
+msgid "Change"
+msgstr "عدّل"
+
+#: templates/unfold/helpers/app_list_default.html:42
+#: templates/unfold_crispy/layout/table_inline_formset.html:73
+msgid "Add"
+msgstr "أضف"
+
+#: templates/unfold/helpers/boolean.html:4
+msgid "Unknown"
+msgstr "مجهول"
+
+#: templates/unfold/helpers/boolean.html:4
+msgid "True"
+msgstr "صحيح"
+
+#: templates/unfold/helpers/boolean.html:4
+msgid "False"
+msgstr "خطأ"
+
+#: templates/unfold/helpers/change_list_filter_actions.html:7
+msgid "Apply Filters"
+msgstr "تطبيق عوامل التصفية"
+
+#: templates/unfold/helpers/change_list_filter_actions.html:16
+msgid "Hide counts"
+msgstr "إخفاء الأعداد"
+
+#: templates/unfold/helpers/change_list_filter_actions.html:20
+msgid "Show counts"
+msgstr "إظهار الأعداد"
+
+#: templates/unfold/helpers/change_list_filter_actions.html:27
+msgid "Clear all filters"
+msgstr "مسح جميع المرشحات"
+
+#: templates/unfold/helpers/change_list_filter_button.html:5
+msgid "Filters"
+msgstr "الفلاتر"
+
+#: templates/unfold/helpers/change_list_headers.html:37
+msgid "Toggle sorting"
+msgstr "عكس الترتيب"
+
+#: templates/unfold/helpers/change_list_headers.html:45
+msgid "Remove from sorting"
+msgstr "إزالة من الترتيب"
+
+#: templates/unfold/helpers/change_list_headers.html:51
+#, python-format
+msgid "Sorting priority: %(priority_number)s"
+msgstr "أولوية الترتيب: %(priority_number)s"
+
+#: templates/unfold/helpers/command_help.html:6
+#: templates/unfold/helpers/shortcuts.html:88
+msgid "Navigate"
+msgstr "تنقّل"
+
+#: templates/unfold/helpers/command_help.html:17
+msgid "Select"
+msgstr "اختيار"
+
+#: templates/unfold/helpers/command_help.html:27
+#: templates/unfold/helpers/shortcuts.html:123
+msgid "Clear"
+msgstr "تفريغ"
+
+#: templates/unfold/helpers/command_history.html:6
+msgid "Recent searches"
+msgstr "عمليات البحث الأخيرة"
+
+#: templates/unfold/helpers/command_results.html:45
+msgid "Nothing matched your search"
+msgstr "لا شيء يطابق بحثك"
+
+#: templates/unfold/helpers/command_results.html:54
+#, python-format
+msgid ""
+"\n"
+"            Found <span class=\"font-medium text-important\">%(counter)s</span> result in %(time)s seconds\n"
+"        "
+msgid_plural ""
+"\n"
+"            Found <span class=\"font-medium text-important\">%(counter)s</span> results in %(time)s seconds\n"
+"        "
+msgstr[0] ""
+"\n"
+"            عدد النتائج: <span class=\"font-medium text-important\">%(counter)s</span> في %(time)s ثانية\n"
+"        "
+msgstr[1] ""
+"\n"
+"            عدد النتائج: <span class=\"font-medium text-important\">%(counter)s</span> في %(time)s ثانية\n"
+"        "
+msgstr[2] ""
+"\n"
+"            عدد النتائج: <span class=\"font-medium text-important\">%(counter)s</span> في %(time)s ثانية\n"
+"        "
+msgstr[3] ""
+"\n"
+"            عدد النتائج: <span class=\"font-medium text-important\">%(counter)s</span> في %(time)s ثانية\n"
+"        "
+msgstr[4] ""
+"\n"
+"            عدد النتائج: <span class=\"font-medium text-important\">%(counter)s</span> في %(time)s ثانية\n"
+"        "
+msgstr[5] ""
+"\n"
+"            عدد النتائج: <span class=\"font-medium text-important\">%(counter)s</span> في %(time)s ثانية\n"
+"        "
+
+#: templates/unfold/helpers/delete_submit_line.html:5
+msgid "No, take me back"
+msgstr "لا, تراجع للخلف"
+
+#: templates/unfold/helpers/delete_submit_line.html:9
+msgid "Yes, I’m sure"
+msgstr "نعم، أنا متأكد"
+
+#: templates/unfold/helpers/dialog.html:37
+msgid "Cancel"
+msgstr "ألغ"
+
+#: templates/unfold/helpers/dialog.html:48
+msgid "Submit"
+msgstr "إرسال"
+
+#: templates/unfold/helpers/display_header.html:10
+msgid "Record picture"
+msgstr "صورة السجل"
+
+#: templates/unfold/helpers/edit_inline/inline_delete_undo.html:5
+msgid "This item will be deleted."
+msgstr "سيُحذف هذا العنصر."
+
+#: templates/unfold/helpers/edit_inline/inline_delete_undo.html:8
+msgid "Click to cancel"
+msgstr "انقر للإلغاء"
+
+#: templates/unfold/helpers/empty_results.html:14
+msgid "No results found"
+msgstr "لم يُعثر على نتائج"
+
+#: templates/unfold/helpers/empty_results.html:18
+msgid ""
+"This page yielded into no results. Create a new item or reset your filters."
+msgstr ""
+"لا توجد نتائج في هذه الصفحة. أنشئ عنصرًا جديدًا أو أعد ضبط عوامل التصفية."
+
+#: templates/unfold/helpers/empty_results.html:32
+msgid "Reset filters"
+msgstr "إعادة ضبط عوامل التصفية"
+
+#: templates/unfold/helpers/field_readonly_value_file.html:8
+#: templates/unfold/widgets/clearable_file_input.html:6
+msgid "Image preview"
+msgstr "معاينة الصورة"
+
+#: templates/unfold/helpers/field_readonly_value_file.html:13
+msgid "Click to download"
+msgstr "انقر للتنزيل"
+
+#: templates/unfold/helpers/header_back_button.html:9
+#: templates/unfold/helpers/header_back_button.html:19
+msgid "Go back"
+msgstr "رجوع"
+
+#: templates/unfold/helpers/history.html:8
+msgid "Recent actions"
+msgstr "آخر الإجراءات"
+
+#: templates/unfold/helpers/history.html:36
+msgid "Unknown content"
+msgstr "مُحتوى مجهول"
+
+#: templates/unfold/helpers/messages/errornote.html:5
+msgid "Please correct the error below."
+msgid_plural "Please correct the errors below."
+msgstr[0] "لا توجد أخطاء لتصحيحها."
+msgstr[1] "الرجاء تصحيح الخطأ أدناه."
+msgstr[2] "الرجاء تصحيح الأخطاء أدناه."
+msgstr[3] "الرجاء تصحيح الأخطاء أدناه."
+msgstr[4] "الرجاء تصحيح الأخطاء أدناه."
+msgstr[5] "الرجاء تصحيح الأخطاء أدناه."
+
+#: templates/unfold/helpers/pagination_infinite.html:5
+msgid "Previous"
+msgstr "السابق"
+
+#: templates/unfold/helpers/pagination_infinite.html:9
+msgid "Next"
+msgstr "التالي"
+
+#: templates/unfold/helpers/search.html:9
+msgid "Search apps and models..."
+msgstr "ابحث في التطبيقات والنماذج…"
+
+#: templates/unfold/helpers/shortcuts.html:8
+msgid "Available shortcuts"
+msgstr "الاختصارات المتاحة"
+
+#: templates/unfold/helpers/shortcuts.html:15
+msgid "Global shortcuts"
+msgstr "الاختصارات العامة"
+
+#: templates/unfold/helpers/shortcuts.html:20
+msgid "Open command tool"
+msgstr "فتح أداة الأوامر"
+
+#: templates/unfold/helpers/shortcuts.html:32
+msgid "Open shortcuts list"
+msgstr "فتح قائمة الاختصارات"
+
+#: templates/unfold/helpers/shortcuts.html:39
+msgid "Toggle sidebar"
+msgstr "إظهار الشريط الجانبي أو إخفاؤه"
+
+#: templates/unfold/helpers/shortcuts.html:46
+msgid "Toggle dark/light mode"
+msgstr "التبديل بين الوضع الداكن والفاتح"
+
+#: templates/unfold/helpers/shortcuts.html:60
+msgid "Changelist shortcuts"
+msgstr "اختصارات قائمة العناصر"
+
+#: templates/unfold/helpers/shortcuts.html:65
+msgid "Toggle filter"
+msgstr "إظهار عوامل التصفية أو إخفاؤها"
+
+#: templates/unfold/helpers/shortcuts.html:72
+msgid "Create new record"
+msgstr "إنشاء سجل جديد"
+
+#: templates/unfold/helpers/shortcuts.html:82
+msgid "Command tool shortcuts"
+msgstr "اختصارات أداة الأوامر"
+
+#: templates/unfold/helpers/shortcuts.html:99
+msgid "Open selection"
+msgstr "فتح العنصر المحدد"
+
+#: templates/unfold/helpers/shortcuts.html:109
+msgid "Open selection in new tab"
+msgstr "فتح العنصر المحدد في علامة تبويب جديدة"
+
+#: templates/unfold/helpers/site_branding.html:3
+#: templates/unfold/helpers/site_branding.html:6
+msgid "Django administration"
+msgstr "إدارة جانغو"
+
+#: templates/unfold/helpers/site_icon.html:7
+#: templates/unfold/helpers/site_icon.html:9
+#: templates/unfold/helpers/site_icon.html:11
+#: templates/unfold/helpers/site_logo.html:5
+#: templates/unfold/helpers/site_logo.html:7
+#: templates/unfold/helpers/site_logo.html:9
+msgid "Home"
+msgstr "الرئيسية"
+
+#: templates/unfold/helpers/tab_items.html:16
+msgid "General"
+msgstr "عام"
+
+#: templates/unfold/helpers/theme_switch.html:9
+#: templates/unfold/helpers/theme_switch_dropdown.html:16
+msgid "Light"
+msgstr "فاتح"
+
+#: templates/unfold/helpers/theme_switch.html:16
+#: templates/unfold/helpers/theme_switch_dropdown.html:23
+msgid "Dark"
+msgstr "داكن"
+
+#: templates/unfold/helpers/theme_switch.html:23
+#: templates/unfold/helpers/theme_switch_dropdown.html:30
+msgid "System"
+msgstr "النظام"
+
+#: templates/unfold/helpers/unauthenticated_header.html:6
+msgid "Return to site"
+msgstr "العودة إلى الموقع"
+
+#: templates/unfold/helpers/welcomemsg.html:23
+#, python-format
+msgid "%(counter)s result"
+msgid_plural "%(counter)s results"
+msgstr[0] "لا نتائج"
+msgstr[1] "نتيجة واحدة"
+msgstr[2] "نتيجتان"
+msgstr[3] "%(counter)s نتائج"
+msgstr[4] "%(counter)s نتيجة"
+msgstr[5] "%(counter)s نتيجة"
+
+#: templates/unfold/helpers/welcomemsg.html:23
+#, python-format
+msgid "%(full_result_count)s total"
+msgstr "المجموع %(full_result_count)s"
+
+#: templates/unfold/widgets/clearable_file_input.html:25
+#: templates/unfold/widgets/clearable_file_input_small.html:18
+msgid "Choose file to upload"
+msgstr "اختر ملفًا لرفعه"
+
+#: templates/unfold/widgets/password_toggle.html:5
+msgid "Toggle password visibility"
+msgstr "إظهار كلمة المرور أو إخفاؤها"
+
+#: templates/unfold/widgets/related_widget_wrapper.html:28
+#: templates/unfold/widgets/related_widget_wrapper.html:29
+#, python-format
+msgid "Change selected %(model)s"
+msgstr "تغيير %(model)s المختارة"
+
+#: templates/unfold/widgets/related_widget_wrapper.html:34
+#: templates/unfold/widgets/related_widget_wrapper.html:35
+#, python-format
+msgid "Add another %(model)s"
+msgstr "أضف %(model)s آخر"
+
+#: templates/unfold/widgets/related_widget_wrapper.html:40
+#: templates/unfold/widgets/related_widget_wrapper.html:41
+#, python-format
+msgid "View selected %(model)s"
+msgstr "استعرض %(model)s المختارة"
+
+#: templates/unfold/widgets/related_widget_wrapper.html:46
+#: templates/unfold/widgets/related_widget_wrapper.html:47
+#, python-format
+msgid "Delete selected %(model)s"
+msgstr "حذف %(model)s المختارة"
+
+#: templates/unfold_crispy/layout/table_inline_formset.html:75
+msgid "Add row"
+msgstr "إضافة صف"
+
+#: templatetags/unfold.py:783
+msgid "Welcome"
+msgstr "مرحبًا"
+
+#: templatetags/unfold_list.py:100
+msgid "Select all objects on this page for an action"
+msgstr "حدد جميع الكائنات في هذه الصفحة لإجراء"
+
+#: widgets.py:593 widgets.py:634
+msgid "Date"
+msgstr "التاريخ"
+
+#: widgets.py:594 widgets.py:639
+msgid "Time"
+msgstr "وقت"
+
+#: widgets.py:1011
+msgid "Select currency"
+msgstr "اختر العملة"
