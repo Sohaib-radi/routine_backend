@@ -150,3 +150,70 @@ fresh it is. Admins can also trigger a recompute from the admin panel.
 `GET /api/v1/tracking/today/` returns the user's local date and, for each trackable
 due today (not archived, not paused, scheduled for today), the trackable,
 today's check-in (or `null`) and its cached streak.
+
+## Services (`services.py`)
+
+Every write goes through these functions: the API, the admin, Celery, the domain
+apps (health) and, later, AI. Each one checks that the objects belong to `user`.
+
+| Function | What it does |
+|----------|--------------|
+| `user_today(user)` | The user's local date (from `tracking.dates`). Use it instead of `date.today()`. |
+| `create_trackable(user, *, name, schedule=None, managed_by='', **fields)` | A trackable and its schedule (default daily). `start_date` defaults to today. |
+| `update_trackable(user, trackable, *, schedule=None, managed_by='', **fields)` | `kind` never changes; `start_date` cannot move past existing check-ins; managed fields are locked (see above). |
+| `archive_trackable` / `unarchive_trackable(user, trackable, managed_by='')` | Stop / resume. Refused for managed trackables. |
+| `log_checkin(user, trackable, date, value=None, source='manual', note='')` | Creates or **accumulates** the day's check-in. Today/yesterday only. Locks the trackable row. |
+| `skip_checkin(user, trackable, date, ...)` | Marks the day skipped. |
+| `set_checkin_value(user, checkin, value)` | Correction: sets the value (no accumulation). Positive values only: delete instead of setting 0. |
+| `delete_checkin(user, checkin)` | Correction: removes a check-in or a skip. |
+| `create_pause(user, *, start_date, end_date=None, trackable=None, reason, note)` | Pause one trackable or everything. Starts yesterday at the earliest. |
+| `end_pause(user, pause, last_paused_day=None)` | Resume; cancels a pause that hasn't started. |
+| `refresh_streak_cache(trackable_id)` | Rebuild one `StreakCache` (called by Celery). |
+
+Every write that changes how history reads queues a streak recompute **after the
+transaction commits** (`transaction.on_commit`), never inside the request.
+
+## Selectors (`selectors.py`)
+
+| Function | Returns |
+|----------|---------|
+| `trackables_for(user)` | The user's trackables (with schedule and streak) |
+| `due_today(user)`, `today_screen(user)` | What is due today; the Today screen (3 queries) |
+| `scheduled_dates(schedule, start, end)`, `is_scheduled(schedule, date)` | When a trackable is due |
+| `paused_dates(user, trackable, start, end)`, `is_paused(user, trackable, date)` | Paused days of one trackable |
+| `paused_on(user, date)` | `(everything_paused, ids paused individually)` on one date, one query. Used by the health dashboard. |
+| `checkins_for(user)`, `checkin_history(user, trackable, start, end)` | Check-ins (history: newest first, max 366 days) |
+| `pauses_for(user, active=None)` | Pauses, running/planned or over |
+| `compute_streak(trackable, today)` | Current, longest, 30-day completion rate, from the source data |
+| `timezones_with_new_day(start, end)`, `trackable_ids_for_new_day(start, end)` | Used by the hourly midnight job |
+
+## API
+
+Under `/api/v1/tracking/`; full list in the [API reference](api.md#tracking).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `today/` | The Today screen |
+| GET / POST | `trackables/` | List (`?archived=`, `?domain=`) / create |
+| GET / PATCH | `trackables/{id}/` | Read / edit (no DELETE: archive instead) |
+| POST | `trackables/{id}/archive/`, `unarchive/` | Stop / resume |
+| GET | `trackables/{id}/checkins/` | History (`?from=&to=`) |
+| POST | `checkins/`, `checkins/skip/` | Log (accumulates) / skip. `Idempotency-Key` supported. |
+| PATCH / DELETE | `checkins/{id}/` | Correct the value / remove |
+| GET / POST | `pauses/` | List (`?active=`) / create |
+| GET | `pauses/{id}/` | Read |
+| POST | `pauses/{id}/end/` | Resume |
+
+## Celery tasks (`tasks.py`)
+
+| Task | When | What |
+|------|------|------|
+| `recompute_streak(trackable_id)` | After each write that affects history | Rebuild one streak cache |
+| `recompute_streaks(trackable_ids)` | Batches of the hourly job | Rebuild several |
+| `recompute_streaks_after_local_midnight(now=None)` | Celery beat, every hour at minute 1 | Users whose local midnight passed in the last full hour: queue all their trackables in batches of 200, so a missed day resets the streak even with no activity. |
+
+## Admin
+
+Trackables (with schedule and reminders inline) can be edited for support, except
+the locked fields of managed trackables. Check-ins, pauses and streak caches are
+read-only; streak caches have a **Recompute** action.

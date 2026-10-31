@@ -28,17 +28,17 @@ Celery for background work. It is sized for roughly 20,000 users.
 
 ```
 ai  ──►  health / spiritual / tasks  ──►  tracking  ──►  accounts  ──►  profiles
-(planned)  (health: round 1 built)       (built)        (built)        (built)
+(planned)  (health: built, spiritual/tasks planned)  (built)  (built)  (built)
 ```
 
 Arrows mean "imports". A lower app never imports a higher one.
 
 | App        | Responsibility |
 |------------|----------------|
-| `profiles` | Admin-defined presets: name, colour, avatar, notification style/sound/vibration. Exactly one default profile, which is always active. Cannot import `accounts`. |
-| `accounts` | The `User` model (email login, UUID id, IANA time zone, selected profile), registration, JWT auth, roles (groups) and permissions. Owns every write that touches both a user and a profile (`select_profile`, `deactivate_profile`). |
-| `tracking` | The shared engine: trackables, schedules, reminders, check-ins, pauses and streak caches. Knows nothing about health or spiritual data. |
-| `health` | The user's plan and targets (calories, macros, water...), weight history, and the water/sleep/steps/activity trackables it creates in `tracking`. Meals are the source of truth for calories and macros (coming rounds). See [health](health.md). |
+| `profiles` | See [profiles](profiles.md). Admin-defined presets: name, colour, avatar, notification style/sound/vibration. Exactly one default profile, which is always active. Cannot import `accounts`. |
+| `accounts` | See [accounts](accounts.md). The `User` model (email login, UUID id, IANA time zone, selected profile), registration, JWT auth, roles (groups) and permissions. Owns every write that touches both a user and a profile (`select_profile`, `deactivate_profile`). |
+| `tracking` | See [tracking](tracking.md). The shared engine: trackables, schedules, reminders, check-ins, pauses and streak caches. Knows nothing about health or spiritual data. |
+| `health` | See [health](health.md). The user's plan and targets, weight and BMI, the water/sleep/steps/activity trackables it creates in `tracking`, the food database, meals (the source of truth for calories and macros), and the daily dashboard with the health score. |
 | `spiritual`, `tasks` | Planned. Will store their own data and record progress through `tracking.services`. |
 | `ai`       | Planned. Optional entry point (voice, photo, text) that proposes actions; it ends in the same domain services as manual input. |
 

@@ -105,3 +105,9 @@ What has been built so far, oldest first.
 - tracking: public `paused_on(user, date)` selector.
 - OpenAPI: food category enum renamed `FoodCategoryEnum` (was `CategoryEnum`), new
   `BmiCategoryEnum`.
+
+### Documentation
+
+- New module pages: `docs/accounts.md`, `docs/profiles.md`.
+- `docs/tracking.md`: services, selectors, API, Celery tasks and admin sections.
+- `docs/architecture.md`: links to every module page; health status updated.

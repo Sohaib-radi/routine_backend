@@ -115,8 +115,10 @@ tests/        cross-app tests
 ## Documentation
 
 - [Architecture](docs/architecture.md): apps, dependency rules, design principles
+- [Accounts](docs/accounts.md): users, time zone, JWT auth, roles, staff user management
+- [Profiles](docs/profiles.md): admin-defined presets, default profile, deactivation
 - [Tracking engine](docs/tracking.md): schedules, check-ins, pauses, streaks and their rules
-- [Health](docs/health.md): plan and targets, formulas, weight, metric trackables, foods (CSV format), meals
+- [Health](docs/health.md): plan and targets, formulas, weight, metric trackables, foods (CSV format), meals, dashboard and health score
 - [API reference](docs/api.md): endpoints, authentication, examples
 - [Development guide](docs/development.md): configuration, testing, conventions, deployment notes
 - [Changelog](docs/changelog.md): what has been built so far
