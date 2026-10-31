@@ -23,7 +23,7 @@ vacations or sickness, and see their **streaks** and 30-day completion rate.
   - Streaks (current, longest, 30-day completion rate) recomputed in the background by Celery,
     including an hourly job for users whose local midnight just passed.
   - "Today" screen: what is due today, in the user's own time zone.
-- **Health** (round 2 of 4): the plan screen, foods and manual meal logging.
+- **Health** (round 3 of 4): the plan screen, foods and manual meal logging, the dashboard and health score.
   - Calories (Mifflin-St Jeor × activity, cut −15% / bulk +10%), protein, carbs, fat and water
     computed from goal, sex, weight, height, age and activity, or set manually.
   - Safety floor (1500 kcal men, 1200 women), age 18+.
@@ -35,6 +35,8 @@ vacations or sickness, and see their **streaks** and 30-day completion rate.
     Private custom foods. Idempotent CSV import (`import_foods`).
   - Meals logged by portion or grams; each item keeps a snapshot, so editing a food never
     changes past meals. Daily totals vs the plan's targets for the calories ring.
+  - One dashboard endpoint (`health/today/`) for both health screens, and a 0–100 health
+    score computed on the fly from water, sleep, steps, activity and calories.
 - **Idempotency keys** on check-in endpoints, so a retry on a flaky mobile network never counts twice.
 - **Admin panel** (Django Unfold) in English, Arabic and French, with roles and permissions.
 - **API docs**: interactive Swagger UI and an OpenAPI 3 schema.
@@ -121,7 +123,7 @@ tests/        cross-app tests
 
 ## Roadmap
 
-- Health rounds 3–4: health dashboard, health score, AI meal logging (text/photo).
+- Health round 4: AI meal logging (text/photo); weekly charts and history summaries.
 - Other domain apps on top of the tracking engine: `spiritual` (prayers, Quran reading), `tasks`.
 - AI entry point (voice, photo, text) that proposes actions for the user to confirm.
 - Reminders and push notifications.

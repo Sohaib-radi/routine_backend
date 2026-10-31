@@ -91,3 +91,17 @@ What has been built so far, oldest first.
 
 - Health group in the admin sidebar: plans, weight, foods, meals, metric trackables.
 - Test: every registered admin must have a sidebar link.
+
+## Health, round 3: dashboard and health score
+
+- `GET /api/v1/health/today/?date=`: plan of that day, nutrition (eaten / target /
+  remaining / percent), water, sleep, steps and activity (with trackable and check-in
+  ids for the +/− buttons, pause flag), BMI with category, health score. Future dates
+  refused; older dates read-only. Six queries whatever the data.
+- Health score (`score.py`): metrics at percent of target capped at 100; calories 100
+  within ±10%, linear to 0 at ±50%; today's calories excluded while eaten <= target
+  + 10%; paused metrics excluded; skips count as 0; no plan or everything paused → null.
+- BMI categories (underweight / normal / overweight / obese) and missing-data reasons.
+- tracking: public `paused_on(user, date)` selector.
+- OpenAPI: food category enum renamed `FoodCategoryEnum` (was `CategoryEnum`), new
+  `BmiCategoryEnum`.

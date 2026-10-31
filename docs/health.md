@@ -7,8 +7,8 @@ steps, activity) it creates in `tracking`, the **food database**, and the user's
 
 It may import `tracking` and `accounts`; they never import `health`.
 
-> Status: Round 2 of 4 (plan + foods and manual meals). The health dashboard, the
-> health score and AI (text/photo logging) come in later rounds.
+> Status: Round 3 of 4 (plan, foods and manual meals, dashboard and health score).
+> AI (text/photo logging), weekly charts and history summaries come later.
 > **Meals are the source of truth for calories and macros**: daily totals are
 > computed from the meal items, never stored as check-ins.
 
@@ -275,6 +275,68 @@ grams (and only grams can be entered).
 
 `meals_for` and `daily_nutrition` use **2 queries each**, whatever the number of meals and items.
 
+## Dashboard (`GET today/`)
+
+One endpoint feeds both health screens for one local date (default today):
+screen 1 (calories target, calories ring, macro cards, water bottle) and screen 2,
+"صحتك النهاردة" (sleep, steps, activity, BMI, health score).
+
+`selectors.health_today(user, date)` returns:
+
+| Field | Content |
+|-------|---------|
+| `date`, `editable` | `editable` is true for today and yesterday (the check-in/meal window); older dates are read-only history. **Future dates are refused** (`400`). |
+| `plan`, `needs_plan` | The targets of `plan_for(user, date)`, the plan that applied **that day**. No plan: `plan = null`, `needs_plan = true` ("set up your plan"). |
+| `nutrition` | For kcal, protein, carbs, fat: `eaten`, `target`, `remaining`, `percent` (from `daily_nutrition`). Without a plan, `eaten` is still shown and the rest is `null`. |
+| `metrics` | water, sleep, steps, activity: `value`, `target` (that day's plan), `unit`, `percent`, `trackable_id`, `checkin_id`, `checkin_status`, `paused`. `null` without a plan. |
+| `everything_paused` | A pause on everything (`trackable = NULL`) covers that day. |
+| `bmi` | `value` and `category` (underweight < 18.5 ≤ normal < 25 ≤ overweight < 30 ≤ obese), or `null` with `reason`: `no_weight` / `no_height`. Uses the latest weight on or before that date and the height of that day's plan. |
+| `score` | `total`, `breakdown`, `excluded` (below). `null` without a plan or when everything is paused. |
+
+- **Percents** are whole numbers, rounded half up, and **not capped** (a bar can show 150%). Only the score caps.
+- A metric's `value` is 0 when nothing was logged, and also when the day was **skipped**.
+- **Six queries**, whatever the number of meals, items and check-ins: plan, meal
+  totals, metric links, check-ins, pauses, weight (three without a plan).
+- Nothing is stored: the dashboard always matches the data and that day's plan.
+
+### The + and − buttons
+
+The metrics are ordinary tracking trackables, so the buttons use the tracking API:
+
+| Button | Call |
+|--------|------|
+| + | `POST /api/v1/tracking/checkins/` with `trackable_id` and the step (`250` ml, `0.5` h...). Repeated taps accumulate into the day's check-in. Send an `Idempotency-Key`. |
+| − | `PATCH /api/v1/tracking/checkins/{checkin_id}/` with the new value. When it would reach **0**, `DELETE` the check-in instead (tracking refuses a value of 0). |
+
+Only for `editable` dates (today/yesterday), like every check-in.
+
+**Sleep date convention:** sleep is logged on the day you **wake up**. Last night's
+sleep belongs to today.
+
+### Health score (`score.py`)
+
+Pure functions, every constant at the top of `score.py`. Computed on the fly, never stored.
+
+| Metric | Points (0–100) |
+|--------|----------------|
+| Water, sleep, steps, activity | Percent of the target, capped at 100. A skipped day is 0. |
+| Calories | 100 when eaten is within ±10% of the target, then linear down to 0 at ±50%, 0 beyond. Symmetric, so overeating never scores higher than eating on target. |
+
+- **Total** = average of the included metrics (equal weights), rounded half up.
+- **Excluded** (listed in `excluded` with a reason, not averaged):
+  - a paused metric → `"paused"`;
+  - **today only**, calories while eaten ≤ target + 10% → `"in_progress"` (the day
+    isn't finished). Above target + 10% the normal curve applies: overeating can't be undone.
+- **Past dates** use the full curve for calories: nothing logged = 0.
+- No plan, or everything paused → `score = null`. If every metric is excluded,
+  `total = null`.
+- A skip counts as 0 rather than being excluded, so skipping can't raise the score;
+  pausing is the honest way to take a metric out.
+
+Example (today, plan of the reference case): lunch 525 kcal, water 1500 ml, sleep 7 h,
+no steps or activity yet → calories excluded (`in_progress`), water 38, sleep 88,
+steps 0, activity 0 → total (38 + 88 + 0 + 0) / 4 = 31.5 → **32**.
+
 ## Services
 
 | Function | What it does |
@@ -304,7 +366,9 @@ grams (and only grams can be entered).
 | `foods_for(user)`, `custom_foods_for(user)` | Visible foods / the user's custom foods |
 | `search_foods(user, q, limit)` | Ranked search results |
 | `meals_for(user, date)`, `meal_totals(meal)` | A day's meals with items; one meal's totals |
-| `daily_nutrition(user, date)` | Totals, targets, remaining |
+| `daily_nutrition(user, date, plan=...)` | Totals, targets, remaining |
+| `bmi_on(user, date, plan)`, `bmi_category(value)` | BMI of a date, with category or reason |
+| `health_today(user, date=None)` | Everything the dashboard shows (6 queries) |
 
 ## API
 
@@ -328,6 +392,7 @@ Under `/api/v1/health/` (see [API reference](api.md#health)):
 | POST | `meals/{id}/items/` | Add an item; returns the updated meal (`201`, `Idempotency-Key`) |
 | PATCH / DELETE | `meals/{id}/items/{item_id}/` | Edit / remove an item; both return the updated meal (`200`) |
 | GET | `nutrition/?date=` | Daily totals vs targets |
+| GET | `today/?date=` | The dashboard: plan, nutrition, metrics, BMI, score |
 
 ## Admin
 
@@ -339,8 +404,10 @@ Under `/api/v1/health/` (see [API reference](api.md#health)):
 
 ## Known limitations / next rounds
 
-- Health dashboard endpoint and health score; AI logging (text/photo), which will
-  use `log_meal(..., source=...)` after the user confirms.
+- AI logging (text/photo), which will use `log_meal(..., source=...)` after the user confirms.
+- Weekly charts and history summaries.
+- Today's score is a "so far" score: the app should label it so (calories wait until
+  the day is over unless already over target).
 - The test foods are approximate; the real dataset comes through `import_foods`.
 - Steps, activity and sleep targets use the defaults (8000, 30 min, 8 h); they are
   not editable on the plan screen yet.

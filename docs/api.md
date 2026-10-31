@@ -109,6 +109,7 @@ See [health](health.md) for the formulas and rules.
 The item endpoints return the whole meal (items and totals, the same shape as
 `GET meals/`), so the app can update the meal and the calorie ring without a second request.
 | GET | `/health/nutrition/?date=` | Daily totals, targets from that day's plan, remaining |
+| GET | `/health/today/?date=` | Dashboard of one day: plan, nutrition, metrics (with check-in ids for the +/− buttons), BMI, health score. Future dates `400`; older dates read-only (`editable: false`). |
 
 List endpoints are paginated (50 per page, `?page=`), except profiles, permissions
 and check-in history.
