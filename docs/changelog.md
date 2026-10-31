@@ -81,3 +81,8 @@ What has been built so far, oldest first.
 - `daily_nutrition`: totals vs the targets of the plan that applied that day.
 - API: `foods/`, `meals/`, `meals/{id}/items/`, `nutrition/`; Idempotency-Key on
   meal and item creation. Fixed query counts for meals and nutrition.
+
+### Item endpoints return the meal
+
+- `POST`, `PATCH` and `DELETE` on `meals/{id}/items/` return the updated meal (items
+  and totals). `DELETE` now answers `200` with the meal instead of `204`.

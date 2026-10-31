@@ -26,7 +26,6 @@ from .serializers import (
     HealthPlanSerializer,
     MealInputSerializer,
     MealItemInputSerializer,
-    MealItemSerializer,
     MealItemUpdateSerializer,
     MealSerializer,
     MealUpdateSerializer,
@@ -198,6 +197,8 @@ class MealViewSet(viewsets.GenericViewSet):
 
 
 class _MealItemMixin:
+    """Item changes return the whole meal (items + totals): the app updates the calorie ring at once."""
+
     def _meal(self, request, pk):
         try:
             return Meal.objects.get(pk=pk, user=request.user)
@@ -206,35 +207,40 @@ class _MealItemMixin:
 
     def _item(self, request, pk, item_pk):
         try:
-            return MealItem.objects.get(pk=item_pk, meal_id=pk, meal__user=request.user)
+            return MealItem.objects.select_related('meal').get(pk=item_pk, meal_id=pk, meal__user=request.user)
         except MealItem.DoesNotExist:
             raise Http404 from None
 
+    def _meal_response(self, request, meal, status_code=status.HTTP_200_OK):
+        meal = selectors.meals_for(request.user, meal.date).get(pk=meal.pk)
+        return Response(MealSerializer(meal).data, status=status_code)
+
 
 class MealItemsView(_MealItemMixin, APIView):
-    @extend_schema(request=MealItemInputSerializer, responses={201: MealItemSerializer},
+    @extend_schema(request=MealItemInputSerializer, responses={201: MealSerializer},
                    parameters=[IDEMPOTENCY_KEY])
     @idempotent
     def post(self, request, pk):
-        """Add an item to a meal."""
+        """Add an item to a meal. Returns the updated meal."""
         meal = self._meal(request, pk)
-        item = services.add_item(request.user, meal, _valid(MealItemInputSerializer, request.data, request))
-        return Response(MealItemSerializer(item).data, status=status.HTTP_201_CREATED)
+        services.add_item(request.user, meal, _valid(MealItemInputSerializer, request.data, request))
+        return self._meal_response(request, meal, status.HTTP_201_CREATED)
 
 
 class MealItemDetailView(_MealItemMixin, APIView):
-    @extend_schema(request=MealItemUpdateSerializer, responses=MealItemSerializer)
+    @extend_schema(request=MealItemUpdateSerializer, responses=MealSerializer)
     def patch(self, request, pk, item_pk):
-        """Change the food, portion/quantity or grams. The snapshot is recomputed."""
+        """Change the food, portion/quantity or grams (the snapshot is recomputed). Returns the updated meal."""
         item = self._item(request, pk, item_pk)
-        data = _valid(MealItemUpdateSerializer, request.data, request)
-        return Response(MealItemSerializer(services.update_item(request.user, item, **data)).data)
+        services.update_item(request.user, item, **_valid(MealItemUpdateSerializer, request.data, request))
+        return self._meal_response(request, item.meal)
 
-    @extend_schema(responses={204: None})
+    @extend_schema(responses=MealSerializer)
     def delete(self, request, pk, item_pk):
-        """Remove an item. The last item cannot be removed: delete the meal instead."""
-        services.remove_item(request.user, self._item(request, pk, item_pk))
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        """Remove an item (not the last one: delete the meal instead). Returns the updated meal (200)."""
+        item = self._item(request, pk, item_pk)
+        services.remove_item(request.user, item)
+        return self._meal_response(request, item.meal)
 
 
 class NutritionView(APIView):

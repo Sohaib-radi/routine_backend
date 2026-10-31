@@ -325,8 +325,8 @@ Under `/api/v1/health/` (see [API reference](api.md#health)):
 | GET | `meals/?date=` | A day's meals (default today) with items and totals |
 | POST | `meals/` | Log a meal with its items (`201`, `Idempotency-Key`) |
 | PATCH / DELETE | `meals/{id}/` | Edit `date` / `meal_type` / `note`; delete |
-| POST | `meals/{id}/items/` | Add an item (`201`, `Idempotency-Key`) |
-| PATCH / DELETE | `meals/{id}/items/{item_id}/` | Edit / remove an item |
+| POST | `meals/{id}/items/` | Add an item; returns the updated meal (`201`, `Idempotency-Key`) |
+| PATCH / DELETE | `meals/{id}/items/{item_id}/` | Edit / remove an item; both return the updated meal (`200`) |
 | GET | `nutrition/?date=` | Daily totals vs targets |
 
 ## Admin

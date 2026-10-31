@@ -103,8 +103,11 @@ See [health](health.md) for the formulas and rules.
 | GET | `/health/meals/?date=` | A day's meals (default today) with items and per-meal totals |
 | POST | `/health/meals/` | Log a meal and its items (`201`). Supports `Idempotency-Key`. |
 | PATCH / DELETE | `/health/meals/{id}/` | Edit `date`, `meal_type`, `note` / delete. Today and yesterday only. |
-| POST | `/health/meals/{id}/items/` | Add an item (`201`). Supports `Idempotency-Key`. |
-| PATCH / DELETE | `/health/meals/{id}/items/{item_id}/` | Edit / remove an item. The last item cannot be removed (`400`). |
+| POST | `/health/meals/{id}/items/` | Add an item. Returns the updated meal (`201`). Supports `Idempotency-Key`. |
+| PATCH / DELETE | `/health/meals/{id}/items/{item_id}/` | Edit / remove an item. Both return the updated meal (`200`, also for DELETE). The last item cannot be removed (`400`). |
+
+The item endpoints return the whole meal (items and totals, the same shape as
+`GET meals/`), so the app can update the meal and the calorie ring without a second request.
 | GET | `/health/nutrition/?date=` | Daily totals, targets from that day's plan, remaining |
 
 List endpoints are paginated (50 per page, `?page=`), except profiles, permissions

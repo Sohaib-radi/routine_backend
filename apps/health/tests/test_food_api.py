@@ -162,25 +162,58 @@ def test_update_and_delete_meal(api, koshari):
     assert not Meal.objects.exists()
 
 
-def test_items_endpoints(api, koshari, egg):
-    meal = post_meal(api, {'food_id': str(koshari.pk), 'grams': '100'}).json()
+def test_items_endpoints_return_the_updated_meal(api, koshari, egg):
+    meal = post_meal(api, {'food_id': str(koshari.pk), 'grams': '100'}).json()  # 150 kcal
     url = f'{BASE}/meals/{meal["id"]}/items/'
+
     r = api.post(url, {'food_id': str(egg.pk), 'portion': 'piece'}, format='json', HTTP_IDEMPOTENCY_KEY='i1')
     assert r.status_code == 201
-    item = r.json()
-    assert api.post(url, {'food_id': str(egg.pk), 'portion': 'piece'}, format='json',
-                    HTTP_IDEMPOTENCY_KEY='i1').json() == item  # replayed
+    added = r.json()
+    assert added['id'] == meal['id']
+    assert [i['name_en'] for i in added['items']] == ['Koshari', 'Egg']
+    assert added['totals']['kcal'] == '227.5'  # 150 + 77.5
+    egg_item = added['items'][1]['id']
+    replay = api.post(url, {'food_id': str(egg.pk), 'portion': 'piece'}, format='json', HTTP_IDEMPOTENCY_KEY='i1')
+    assert (replay.status_code, replay.json()) == (201, added)
     assert MealItem.objects.count() == 2
 
-    r = api.patch(f'{url}{item["id"]}/', {'quantity': '3'}, format='json')
-    assert (r.status_code, r.json()['grams'], r.json()['kcal']) == (200, '150.0', '232.5')
-    r = api.patch(f'{url}{item["id"]}/', {'grams': '20'}, format='json')
-    assert (r.json()['portion'], r.json()['grams']) == ('', '20.0')
+    r = api.patch(f'{url}{egg_item}/', {'quantity': '3'}, format='json')
+    assert r.status_code == 200
+    assert (r.json()['items'][1]['grams'], r.json()['items'][1]['kcal']) == ('150.0', '232.5')
+    assert r.json()['totals']['kcal'] == '382.5'  # 150 + 232.5
+    r = api.patch(f'{url}{egg_item}/', {'grams': '20'}, format='json')
+    assert (r.json()['items'][1]['portion'], r.json()['items'][1]['grams'], r.json()['totals']['kcal']) == (
+        '', '20.0', '181.0')  # 150 + 31
 
-    assert api.delete(f'{url}{item["id"]}/').status_code == 204
+    r = api.delete(f'{url}{egg_item}/')
+    assert r.status_code == 200
+    assert ([i['name_en'] for i in r.json()['items']], r.json()['totals']['kcal']) == (['Koshari'], '150.0')
+
     last = meal['items'][0]['id']
     r = api.delete(f'{url}{last}/')
     assert r.status_code == 400 and 'delete the meal' in str(r.json())
+
+
+def test_item_responses_match_the_meals_list(api, koshari, egg):
+    """The returned meal is exactly what GET meals/ shows, so the app can just swap it in."""
+    meal = post_meal(api, {'food_id': str(koshari.pk), 'grams': '100'}).json()
+    returned = api.post(f'{BASE}/meals/{meal["id"]}/items/', {'food_id': str(egg.pk), 'grams': '50'},
+                        format='json').json()
+    assert api.get(f'{BASE}/meals/').json() == [returned]
+
+
+def test_item_change_query_count_is_fixed(api, user, koshari):
+    meal = services.log_meal(user, date=TODAY, meal_type='lunch', items=[{'food': koshari, 'grams': 10}] * 20)
+    item = meal.items.first()
+    with CaptureQueriesContext(connection) as ctx:
+        api.patch(f'{BASE}/meals/{meal.pk}/items/{item.pk}/', {'grams': '30'}, format='json')
+    small = len(ctx)
+    services.log_meal(user, date=TODAY, meal_type='dinner', items=[{'food': koshari, 'grams': 10}] * 2)
+    meal2 = Meal.objects.get(meal_type='dinner')
+    item2 = meal2.items.first()
+    with CaptureQueriesContext(connection) as ctx:
+        api.patch(f'{BASE}/meals/{meal2.pk}/items/{item2.pk}/', {'grams': '30'}, format='json')
+    assert len(ctx) == small  # independent of the number of items
 
 
 def test_old_meals_cannot_be_changed_through_the_api(api, koshari, freeze_utc):
