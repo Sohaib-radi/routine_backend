@@ -146,3 +146,7 @@ project later and must understand it without asking anyone. Keep it accurate.
   `docs/api.md`, `docs/development.md`. Add each shipped change to `docs/changelog.md`.
 - Link every new page from the README's "Documentation" section.
 - Write for a newcomer: plain language, explain the "why", no assumed context.
+- **Admin guides** (`docs/admin-guide/<app>.md`) are for the client's staff, who are
+  not developers: for every admin page, explain step by step (A to Z) how to open it,
+  read it, use it, what they cannot do and why, and common situations. No jargon.
+  A new or changed admin page updates its guide in the same change.

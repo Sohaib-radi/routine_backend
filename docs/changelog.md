@@ -133,3 +133,9 @@ What has been built so far, oldest first.
 - Drafts expire after 24 h; a beat task fails stuck drafts every 5 minutes.
 - `python manage.py try_meal_text` to check quality by hand.
 - health: `Food.Source.AI`, `create_custom_food(source=...)`, `match_foods`.
+
+### Admin guide
+
+- `docs/admin-guide/health.md`: a step-by-step, non-technical guide to every Health
+  page of the admin panel (plans, weight, foods, meals, metric trackables).
+- CLAUDE.md: every admin page gets a non-technical guide in `docs/admin-guide/`.

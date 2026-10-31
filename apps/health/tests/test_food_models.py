@@ -98,3 +98,17 @@ def test_custom_foods_are_read_only_in_admin(admin_client, user):
     assert r.status_code == 200
     assert 'kcal' not in r.context['adminform'].form.fields
     assert admin_client.post(reverse('admin:health_food_delete', args=[food.pk]), {'post': 'yes'}).status_code == 403
+
+
+def test_bulk_delete_refuses_a_selection_with_custom_foods(admin_client, user):
+    """Django checks each selected food: a user's custom food makes the whole bulk delete refused."""
+    global_food = make_food()
+    custom = make_food(user=user, source=Food.Source.CUSTOM, key='')
+    url = reverse('admin:health_food_changelist')
+    r = admin_client.post(url, {'action': 'delete_selected', '_selected_action': [global_food.pk, custom.pk],
+                                'post': 'yes'})
+    assert r.status_code == 403
+    assert Food.objects.count() == 2
+    r = admin_client.post(url, {'action': 'delete_selected', '_selected_action': [global_food.pk], 'post': 'yes'})
+    assert r.status_code == 302
+    assert list(Food.objects.values_list('pk', flat=True)) == [custom.pk]

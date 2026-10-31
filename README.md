@@ -129,6 +129,10 @@ tests/        cross-app tests
 - [Development guide](docs/development.md): configuration, testing, conventions, deployment notes
 - [Changelog](docs/changelog.md): what has been built so far
 
+Guides for the people who manage the app (no technical knowledge needed):
+
+- [Admin guide: Health pages](docs/admin-guide/health.md): plans, weight, foods, meals, metric trackables, step by step
+
 ## Roadmap
 
 - AI: meal from a photo, voice; health weekly charts and history summaries.

@@ -7,6 +7,9 @@ steps, activity) it creates in `tracking`, the **food database**, and the user's
 
 It may import `tracking` and `accounts`; they never import `health`.
 
+> Managing the Health pages of the admin panel (non-technical, step by step):
+> see the [admin guide](admin-guide/health.md).
+
 > Status: Round 3 of 4 (plan, foods and manual meals, dashboard and health score).
 > AI (text/photo logging), weekly charts and history summaries come later.
 > **Meals are the source of truth for calories and macros**: daily totals are
