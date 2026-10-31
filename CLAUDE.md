@@ -89,11 +89,20 @@ Backfill: check-ins are accepted for today and yesterday only (user's local
 date). Older and future dates are refused. This applies to every entry point,
 including AI agents.
 
+Corrections: the owner can set a check-in's value directly or delete it, within
+the same today/yesterday window. Older check-ins are frozen.
+
 ### 4. Pauses never change history
 Vacation, sickness, travel = a `Pause` period (`trackable=NULL` pauses everything,
 `end_date=NULL` means open-ended). Streaks and completion rates skip paused days;
 reminders are not sent during a pause. Never edit or delete past check-ins because
 of a pause.
+
+A pause starts yesterday at the earliest (no backdating over missed days);
+future pauses (a planned vacation) are allowed.
+
+Archive = the user stopped the habit (streak not protected).
+Pause = temporary break (streak protected).
 
 ### 5. Computed data is a cache, never the source of truth
 `StreakCache` and other aggregates are derived from `CheckIn` + `Pause` and
