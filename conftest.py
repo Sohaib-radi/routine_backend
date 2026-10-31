@@ -23,6 +23,10 @@ def django_db_setup(django_db_setup, django_db_blocker):
 
 @pytest.fixture
 def make_user(db):
+    # A transactional test (transaction=True) flushes the database on teardown, default
+    # profile included; the next test's users need it back. Idempotent.
+    migration = importlib.import_module('apps.profiles.migrations.0002_create_default_profile')
+    migration.create_default_profile(django_apps, None)
     counter = iter(range(1, 10_000))
 
     def make(**fields):
