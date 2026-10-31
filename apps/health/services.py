@@ -16,7 +16,7 @@ from apps.tracking.models import Trackable
 
 from .calculations import WEIGHT_KG_RANGE, PlanInputs, Targets, calculate_targets
 from . import selectors
-from .models import Food, FoodPortion, HealthMetric, HealthPlan, Meal, MealItem, WeightEntry
+from .models import METRIC_PLAN_FIELDS, Food, FoodPortion, HealthMetric, HealthPlan, Meal, MealItem, WeightEntry
 
 __all__ = [
     'preview_plan', 'confirm_plan', 'log_weight',
@@ -28,16 +28,12 @@ MANAGED_BY = 'health'  # tracking.Trackable.managed_by of the metric trackables
 WEIGHT_BACKFILL_DAYS = 30  # weight has no streak: a wider window than check-ins
 
 Metric = HealthMetric.Metric
-# metric -> how its trackable looks, and which plan field holds its target
+# metric -> how its trackable looks (its target comes from models.METRIC_PLAN_FIELDS)
 METRIC_TRACKABLES = {
-    Metric.WATER: {'name': 'Water', 'kind': Trackable.Kind.QUANTITY, 'unit': 'ml', 'icon': 'water',
-                   'target': 'water_ml'},
-    Metric.SLEEP: {'name': 'Sleep', 'kind': Trackable.Kind.QUANTITY, 'unit': 'h', 'icon': 'sleep',
-                   'target': 'sleep_hours'},
-    Metric.STEPS: {'name': 'Steps', 'kind': Trackable.Kind.QUANTITY, 'unit': 'steps', 'icon': 'steps',
-                   'target': 'steps'},
-    Metric.ACTIVITY: {'name': 'Activity', 'kind': Trackable.Kind.DURATION, 'unit': 'min', 'icon': 'activity',
-                      'target': 'activity_minutes'},
+    Metric.WATER: {'name': 'Water', 'kind': Trackable.Kind.QUANTITY, 'unit': 'ml', 'icon': 'water'},
+    Metric.SLEEP: {'name': 'Sleep', 'kind': Trackable.Kind.QUANTITY, 'unit': 'h', 'icon': 'sleep'},
+    Metric.STEPS: {'name': 'Steps', 'kind': Trackable.Kind.QUANTITY, 'unit': 'steps', 'icon': 'steps'},
+    Metric.ACTIVITY: {'name': 'Activity', 'kind': Trackable.Kind.DURATION, 'unit': 'min', 'icon': 'activity'},
 }
 
 
@@ -80,7 +76,7 @@ def _sync_metric_trackables(user, plan: HealthPlan) -> None:
     """Exactly one trackable per metric per user, found through HealthMetric (never by name)."""
     links = {link.metric: link for link in HealthMetric.objects.filter(user=user).select_related('trackable')}
     for metric, spec in METRIC_TRACKABLES.items():
-        target = getattr(plan, spec['target'])
+        target = getattr(plan, METRIC_PLAN_FIELDS[metric])
         link = links.get(metric)
         if link is None:
             trackable = tracking.create_trackable(

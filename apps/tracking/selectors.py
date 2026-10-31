@@ -92,6 +92,11 @@ def _paused_today(user, today: date) -> tuple[bool, set]:
     return None in scopes, scopes - {None}
 
 
+def paused_on(user, d: date) -> tuple[bool, set]:
+    """(is everything paused?, ids of trackables paused individually) on local date `d`. One query."""
+    return _paused_today(user, d)
+
+
 def _due(user, today: date, trackables) -> list[Trackable]:
     everything_paused, paused_ids = _paused_today(user, today)
     if everything_paused:

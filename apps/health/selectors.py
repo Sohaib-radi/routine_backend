@@ -2,16 +2,21 @@
 
 import re
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.contrib.postgres.search import TrigramWordSimilarity
 from django.db.models import Case, IntegerField, Prefetch, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
 
-from apps.tracking.dates import user_today
+from django.core.exceptions import ValidationError
 
-from .models import Food, HealthMetric, HealthPlan, Meal, MealItem, WeightEntry
+from apps.tracking import selectors as tracking
+from apps.tracking.dates import user_today
+from apps.tracking.models import CheckIn
+
+from . import score as scoring
+from .models import METRIC_PLAN_FIELDS, Food, HealthMetric, HealthPlan, Meal, MealItem, WeightEntry
 from .text import normalize
 
 
@@ -185,17 +190,121 @@ class DailyNutrition:
     remaining: Nutrients | None  # targets - totals (negative when over)
 
 
-def daily_nutrition(user, d: date) -> DailyNutrition:
+_UNSET = object()
+
+
+def daily_nutrition(user, d: date, plan=_UNSET) -> DailyNutrition:
     """
     What the calories ring and macro cards show: totals from the meal snapshots,
-    the targets of the plan that applied on `d`, and what remains. Two queries.
+    the targets of the plan that applied on `d`, and what remains. Two queries
+    (one when the caller passes `plan`, which must be plan_for(user, d)).
     """
     sums = MealItem.objects.filter(meal__user=user, meal__date=d).aggregate(
         **{f: Coalesce(Sum(f), Decimal(0)) for f in NUTRIENT_FIELDS}
     )
     totals = Nutrients(**sums)
-    plan = plan_for(user, d)
+    if plan is _UNSET:
+        plan = plan_for(user, d)
     if plan is None:
         return DailyNutrition(d, totals, None, None)
     targets = Nutrients(Decimal(plan.calories), Decimal(plan.protein_g), Decimal(plan.carbs_g), Decimal(plan.fat_g))
     return DailyNutrition(d, totals, targets, targets - totals)
+
+
+# ----------------------------- today (dashboard) --------------------------- #
+# Editable window, same as check-ins and meals: today and yesterday.
+EDITABLE_DAYS = 1
+
+
+@dataclass(frozen=True)
+class NutrientLine:
+    eaten: Decimal
+    target: Decimal | None
+    remaining: Decimal | None
+    percent: int | None  # eaten / target, not capped
+
+
+@dataclass(frozen=True)
+class MetricStatus:
+    value: Decimal       # 0 when nothing was logged or the day was skipped
+    target: Decimal
+    unit: str
+    percent: int         # value / target, not capped
+    trackable_id: object
+    checkin_id: object | None
+    checkin_status: str | None  # done / partial / skipped
+    paused: bool
+
+
+@dataclass(frozen=True)
+class HealthToday:
+    date: date
+    editable: bool
+    plan: HealthPlan | None
+    nutrition: dict[str, NutrientLine]
+    metrics: dict[str, MetricStatus] | None  # None without a plan
+    everything_paused: bool
+    bmi: Bmi
+    score: scoring.Score | None
+
+
+def _nutrition_lines(nutrition: DailyNutrition) -> dict[str, NutrientLine]:
+    lines = {}
+    for f in NUTRIENT_FIELDS:
+        eaten = getattr(nutrition.totals, f)
+        if nutrition.targets is None:
+            lines[f] = NutrientLine(eaten, None, None, None)
+        else:
+            target = getattr(nutrition.targets, f)
+            lines[f] = NutrientLine(eaten, target, getattr(nutrition.remaining, f), scoring.percent(eaten, target))
+    return lines
+
+
+def _metric_statuses(user, d: date, plan: HealthPlan) -> tuple[dict[str, MetricStatus], bool]:
+    """The 4 metric trackables on `d`: value, the target of THAT day's plan, pause. Three queries."""
+    links = list(HealthMetric.objects.filter(user=user).select_related('trackable'))
+    checkins = {c.trackable_id: c for c in tracking.checkins_for(user).filter(
+        date=d, trackable_id__in=[link.trackable_id for link in links])}
+    everything_paused, paused_ids = tracking.paused_on(user, d)
+    statuses = {}
+    for link in links:
+        checkin = checkins.get(link.trackable_id)
+        skipped = checkin is not None and checkin.status == CheckIn.Status.SKIPPED
+        value = Decimal(0) if checkin is None or skipped or checkin.value is None else checkin.value
+        target = Decimal(getattr(plan, METRIC_PLAN_FIELDS[link.metric]))
+        statuses[link.metric] = MetricStatus(
+            value=value, target=target, unit=link.trackable.unit, percent=scoring.percent(value, target),
+            trackable_id=link.trackable_id, checkin_id=checkin.pk if checkin else None,
+            checkin_status=checkin.status if checkin else None,
+            paused=everything_paused or link.trackable_id in paused_ids,
+        )
+    return statuses, everything_paused
+
+
+def health_today(user, d: date | None = None) -> HealthToday:
+    """
+    Everything the two health screens show for local date `d` (default today):
+    the plan of that day, nutrition, the 4 metrics, BMI and the score. Future dates
+    are refused; older dates are read-only history. Six queries whatever the data.
+    Nothing is stored: the score always matches the data and that day's plan.
+    """
+    today = user_today(user)
+    d = d or today
+    if d > today:
+        raise ValidationError({'date': 'Cannot show a future date.'})
+
+    plan = plan_for(user, d)
+    nutrition = _nutrition_lines(daily_nutrition(user, d, plan=plan))
+    metrics, everything_paused, day_score = None, False, None
+    if plan is not None:
+        metrics, everything_paused = _metric_statuses(user, d, plan)
+        if set(metrics) == set(scoring.METRICS):  # always true once a plan was confirmed
+            day_score = scoring.day_score(
+                has_plan=True, everything_paused=everything_paused, is_today=d == today,
+                calories=scoring.Metric(nutrition['kcal'].eaten, Decimal(plan.calories)),
+                metrics={name: scoring.Metric(m.value, m.target, m.paused) for name, m in metrics.items()},
+            )
+    return HealthToday(
+        date=d, editable=d >= today - timedelta(days=EDITABLE_DAYS), plan=plan, nutrition=nutrition,
+        metrics=metrics, everything_paused=everything_paused, bmi=bmi_on(user, d, plan), score=day_score,
+    )

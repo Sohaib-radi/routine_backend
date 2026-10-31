@@ -89,6 +89,10 @@ class WeightEntry(TimeStampedModel):
         return f'{self.user} on {self.date}: {self.weight_kg} kg'
 
 
+# metric -> the HealthPlan field that holds its target
+METRIC_PLAN_FIELDS = {'water': 'water_ml', 'sleep': 'sleep_hours', 'steps': 'steps', 'activity': 'activity_minutes'}
+
+
 class HealthMetric(TimeStampedModel):
     """
     The link between a health metric and its trackable in tracking. Health owns it:
