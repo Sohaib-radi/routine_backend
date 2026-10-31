@@ -64,6 +64,7 @@ BMI_CATEGORIES = (
     (Decimal(30), 'overweight'),
 )
 BMI_TOP_CATEGORY = 'obese'  # >= 30
+BMI_CATEGORY_CHOICES = [name for _, name in BMI_CATEGORIES] + [BMI_TOP_CATEGORY]
 NO_WEIGHT, NO_HEIGHT = 'no_weight', 'no_height'
 
 

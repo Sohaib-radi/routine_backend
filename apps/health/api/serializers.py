@@ -227,3 +227,81 @@ class DailyNutritionSerializer(serializers.Serializer):
     totals = NutrientsSerializer(help_text='From the meals of that day.')
     targets = NutrientsSerializer(allow_null=True, help_text='From the plan that applied that day. Null: no plan.')
     remaining = NutrientsSerializer(allow_null=True, help_text='targets - totals; negative when over.')
+
+
+# ----------------------------- today (dashboard) --------------------------- #
+class TodayPlanSerializer(serializers.ModelSerializer):
+    """The targets of the plan that applied on that date."""
+
+    class Meta:
+        model = HealthPlan
+        fields = ['id', 'effective_from', 'goal', 'calories', 'protein_g', 'carbs_g', 'fat_g', 'water_ml', 'steps',
+                  'activity_minutes', 'sleep_hours', 'calorie_floor_applied']
+        read_only_fields = fields
+
+
+class NutrientLineSerializer(serializers.Serializer):
+    eaten = serializers.DecimalField(max_digits=8, decimal_places=1)
+    target = serializers.DecimalField(max_digits=8, decimal_places=1, allow_null=True)
+    remaining = serializers.DecimalField(max_digits=8, decimal_places=1, allow_null=True,
+                                         help_text='Negative when over the target.')
+    percent = serializers.IntegerField(allow_null=True, help_text='eaten / target, not capped.')
+
+
+class TodayNutritionSerializer(serializers.Serializer):
+    kcal = NutrientLineSerializer()
+    protein_g = NutrientLineSerializer()
+    carbs_g = NutrientLineSerializer()
+    fat_g = NutrientLineSerializer()
+
+
+class MetricStatusSerializer(serializers.Serializer):
+    value = serializers.DecimalField(max_digits=10, decimal_places=2, help_text='0 when nothing logged or skipped.')
+    target = serializers.DecimalField(max_digits=10, decimal_places=2, help_text="From that day's plan.")
+    unit = serializers.CharField()
+    percent = serializers.IntegerField(help_text='value / target, not capped.')
+    trackable_id = serializers.UUIDField(help_text='+ button: POST tracking/checkins/ with this trackable.')
+    checkin_id = serializers.UUIDField(allow_null=True, help_text='- button: PATCH (or DELETE at 0) '
+                                                                 'tracking/checkins/{id}/.')
+    checkin_status = serializers.CharField(allow_null=True, help_text='done, partial or skipped.')
+    paused = serializers.BooleanField()
+
+
+class TodayMetricsSerializer(serializers.Serializer):
+    water = MetricStatusSerializer()
+    sleep = MetricStatusSerializer(help_text='Logged on the day you wake up.')
+    steps = MetricStatusSerializer()
+    activity = MetricStatusSerializer()
+
+
+class BmiSerializer(serializers.Serializer):
+    value = serializers.DecimalField(max_digits=4, decimal_places=1, allow_null=True)
+    category = serializers.ChoiceField(choices=selectors.BMI_CATEGORY_CHOICES, allow_null=True,
+                                       help_text='< 18.5 underweight, < 25 normal, < 30 overweight, >= 30 obese.')
+    reason = serializers.ChoiceField(choices=['no_weight', 'no_height'], allow_null=True,
+                                     help_text='Why there is no value.')
+
+
+class ScoreSerializer(serializers.Serializer):
+    total = serializers.IntegerField(allow_null=True, help_text='0-100. Null when every metric is excluded.')
+    breakdown = serializers.DictField(child=serializers.IntegerField(),
+                                      help_text='Points (0-100) of each included metric: calories, water, sleep, '
+                                                'steps, activity.')
+    excluded = serializers.DictField(child=serializers.CharField(),
+                                     help_text='Excluded metric -> reason: "paused", or "in_progress" for '
+                                               "today's calories while eaten <= target + 10%.")
+
+
+class HealthTodaySerializer(serializers.Serializer):
+    date = serializers.DateField()
+    editable = serializers.BooleanField(help_text='Today or yesterday; older dates are read-only.')
+    needs_plan = serializers.SerializerMethodField(help_text='No plan that day: show "set up your plan".')
+    plan = TodayPlanSerializer(allow_null=True)
+    nutrition = TodayNutritionSerializer()
+    metrics = TodayMetricsSerializer(allow_null=True, help_text='Null without a plan.')
+    everything_paused = serializers.BooleanField()
+    bmi = BmiSerializer()
+    score = ScoreSerializer(allow_null=True, help_text='Null without a plan or when everything is paused.')
+
+    def get_needs_plan(self, today) -> bool:
+        return today.plan is None

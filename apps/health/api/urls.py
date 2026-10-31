@@ -16,5 +16,6 @@ urlpatterns = [
     path('meals/<uuid:pk>/items/', views.MealItemsView.as_view(), name='meal-items'),
     path('meals/<uuid:pk>/items/<uuid:item_pk>/', views.MealItemDetailView.as_view(), name='meal-item-detail'),
     path('nutrition/', views.NutritionView.as_view(), name='health-nutrition'),
+    path('today/', views.HealthTodayView.as_view(), name='health-today'),
     path('', include(router.urls)),
 ]

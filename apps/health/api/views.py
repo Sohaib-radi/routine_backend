@@ -23,6 +23,7 @@ from .serializers import (
     DateQuerySerializer,
     FoodSearchQuerySerializer,
     FoodSerializer,
+    HealthTodaySerializer,
     HealthPlanSerializer,
     MealInputSerializer,
     MealItemInputSerializer,
@@ -249,3 +250,15 @@ class NutritionView(APIView):
     @extend_schema(parameters=[DateQuerySerializer], responses=DailyNutritionSerializer)
     def get(self, request):
         return Response(DailyNutritionSerializer(selectors.daily_nutrition(request.user, _date(request))).data)
+
+
+class HealthTodayView(APIView):
+    """
+    The two health screens of one day: plan, calories ring and macros, water, sleep,
+    steps, activity, BMI and the health score. `date` defaults to today; older dates
+    are read-only history; future dates are refused.
+    """
+
+    @extend_schema(parameters=[DateQuerySerializer], responses=HealthTodaySerializer)
+    def get(self, request):
+        return Response(HealthTodaySerializer(selectors.health_today(request.user, _date(request))).data)
