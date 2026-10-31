@@ -28,7 +28,7 @@ Celery for background work. It is sized for roughly 20,000 users.
 
 ```
 ai  ──►  health / spiritual / tasks  ──►  tracking  ──►  accounts  ──►  profiles
-(planned)  (health: built, spiritual/tasks planned)  (built)  (built)  (built)
+(built)  (health: built, spiritual/tasks planned)  (built)  (built)  (built)
 ```
 
 Arrows mean "imports". A lower app never imports a higher one.
@@ -40,7 +40,7 @@ Arrows mean "imports". A lower app never imports a higher one.
 | `tracking` | See [tracking](tracking.md). The shared engine: trackables, schedules, reminders, check-ins, pauses and streak caches. Knows nothing about health or spiritual data. |
 | `health` | See [health](health.md). The user's plan and targets, weight and BMI, the water/sleep/steps/activity trackables it creates in `tracking`, the food database, meals (the source of truth for calories and macros), and the daily dashboard with the health score. |
 | `spiritual`, `tasks` | Planned. Will store their own data and record progress through `tracking.services`. |
-| `ai`       | Planned. Optional entry point (voice, photo, text) that proposes actions; it ends in the same domain services as manual input. |
+| `ai`       | See [ai](ai.md). Optional entry point: meal from text now (photo, voice later). The model only extracts; the backend matches foods; the user confirms; confirming calls `health.services.log_meal(source=agent)`. Provider-agnostic, configured in the admin, usage and cost logged. Nothing imports `ai`. |
 
 ### Inside each app
 
@@ -95,6 +95,8 @@ apps/<app>/
 |------|---------|--------------|
 | `tracking.tasks.recompute_streak` | After every check-in, pause or trackable change (on transaction commit) | Rebuilds one trackable's `StreakCache`. |
 | `tracking.tasks.recompute_streaks_after_local_midnight` | Celery beat, every hour at minute 1 | Finds users whose local midnight passed in the last full hour and queues their trackables in batches of 200, so a missed day resets the streak even when nothing was logged. |
+| `ai.tasks.analyze_meal_draft` | On meal-draft creation (on commit) | Calls the AI provider, validates, matches foods; the draft ends ready or failed. |
+| `ai.tasks.sweep_meal_drafts` | Celery beat, every 5 minutes | Fails drafts stuck in pending/processing; expires drafts older than 24 h. |
 
 ## Configuration
 

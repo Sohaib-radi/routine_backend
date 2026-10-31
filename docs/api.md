@@ -111,6 +111,18 @@ The item endpoints return the whole meal (items and totals, the same shape as
 | GET | `/health/nutrition/?date=` | Daily totals, targets from that day's plan, remaining |
 | GET | `/health/today/?date=` | Dashboard of one day: plan, nutrition, metrics (with check-in ids for the +/− buttons), BMI, health score. Future dates `400`; older dates read-only (`editable: false`). |
 
+### AI
+
+See [ai](ai.md) for the flow, statuses and rules. Every endpoint answers **503**
+`{"code": "ai_disabled"}` when the feature is turned off in the admin.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/ai/meal-drafts/` | `{text, date?, meal_type?}` (text ≤ 500 chars) → **202** with a `pending` draft; analysis runs in the background. **429** over the daily limit (`reset_at`, `Retry-After`). Supports `Idempotency-Key`. |
+| GET | `/ai/meal-drafts/{id}/` | Poll: `status` (pending / processing / ready / failed / confirmed / expired), `items` (with `candidates`), `totals`, `error {code, message}` |
+| PATCH | `/ai/meal-drafts/{id}/` | `{items?, date?, meal_type?}`: the full edited item list (ready only) |
+| POST | `/ai/meal-drafts/{id}/confirm/` | Saves the meal (`source: "agent"`) → **201** with the meal (200 if already confirmed). Supports `Idempotency-Key`. |
+
 List endpoints are paginated (50 per page, `?page=`), except profiles, permissions
 and check-in history.
 
@@ -194,10 +206,23 @@ Daily nutrition after that meal (plan of the reference case):
  "remaining": {"kcal": "1420.0", "protein_g": "129.5", "carbs_g": "139.4", "fat_g": "38.2"}}
 ```
 
+Log a meal from text:
+
+```http
+POST /api/v1/ai/meal-drafts/
+Idempotency-Key: 5d0c...
+{"text": "فطرت ساندوتش فول وساندوتش طعمية وكوباية شاي بسكر"}
+```
+
+→ `202 {"id": "...", "status": "pending", ...}`; poll `GET /api/v1/ai/meal-drafts/{id}/`
+until `"status": "ready"`, PATCH the items if needed, then
+`POST /api/v1/ai/meal-drafts/{id}/confirm/`.
+
 ## Idempotency keys
 
-`POST /tracking/checkins/`, `POST /tracking/checkins/skip/`, `POST /health/meals/`
-and `POST /health/meals/{id}/items/` accept an optional
+`POST /tracking/checkins/`, `POST /tracking/checkins/skip/`, `POST /health/meals/`,
+`POST /health/meals/{id}/items/`, `POST /ai/meal-drafts/` and
+`POST /ai/meal-drafts/{id}/confirm/` accept an optional
 `Idempotency-Key` header (for example a UUID generated per user action). Keys are
 scoped per user and kept 24 hours in Redis.
 

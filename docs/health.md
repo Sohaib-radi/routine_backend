@@ -142,10 +142,10 @@ All are `domain=health`, daily, starting the day of the first confirm.
 | `aliases` | Other names in any language: طعمية / فلافل / ta'meya are the same food. |
 | `category` | dish, drink, fruit, vegetable, bread, grain, protein, dairy, sweet, snack, sauce, other |
 | `kcal`, `protein_g`, `carbs_g`, `fat_g` | Per 100 g. kcal 0–900, each macro 0–100 g, protein + carbs + fat ≤ 100 g. |
-| `source` | `nni`, `usda`, `off` (Open Food Facts), `custom` |
+| `source` | `nni`, `usda`, `off` (Open Food Facts), `custom`, `ai` (a user's private food created from an unmatched AI item, see [ai](ai.md#confirming)) |
 | `is_verified` | Checked against a trusted source. Test foods are `false`. |
 | `is_active` | `false` hides the food from search and logging; past meals are unaffected. |
-| `user` | **NULL = global food** (managed by staff). Set = a **private custom food**, visible only to its owner (`source` must then be `custom`). |
+| `user` | **NULL = global food** (managed by staff). Set = a **private custom food**, visible only to its owner (`source` must then be `custom` or `ai`). |
 | `key` | Identifier in the source dataset. Global foods are unique on `(source, key)`: the import matches on it. |
 | `search_text` | Normalized names + aliases, rebuilt on every save (admin included). Never edited directly. |
 
@@ -365,6 +365,7 @@ steps 0, activity 0 → total (38 + 88 + 0 + 0) / 4 = 31.5 → **32**.
 | `metric_trackables(user)` | `{metric: trackable}` |
 | `foods_for(user)`, `custom_foods_for(user)` | Visible foods / the user's custom foods |
 | `search_foods(user, q, limit)` | Ranked search results |
+| `match_foods(user, name, limit=4)` | Looser matching for AI-extracted names: the search, then foods containing any word of the name ranked by trigram similarity (≥ 0.3) |
 | `meals_for(user, date)`, `meal_totals(meal)` | A day's meals with items; one meal's totals |
 | `daily_nutrition(user, date, plan=...)` | Totals, targets, remaining |
 | `bmi_on(user, date, plan)`, `bmi_category(value)` | BMI of a date, with category or reason |

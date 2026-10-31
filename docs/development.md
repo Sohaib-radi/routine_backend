@@ -21,6 +21,10 @@ Copy `.env.example` to `.env`. Never commit `.env`; it is in `.gitignore`.
 | `MEDIA_ROOT` | | Optional, uploaded avatars |
 | `DB_CONN_MAX_AGE` | `60` | Optional |
 | `LOG_LEVEL` | `INFO` | Production |
+| `ANTHROPIC_API_KEY` | `sk-ant-...` | AI provider key. **Environment only**, never in the database or admin. |
+| `AI_ENABLED`, `AI_PROVIDER`, `AI_MODEL`, `AI_EFFORT`, `AI_DAILY_LIMIT` | `true`, `anthropic`, `claude-haiku-5-5`, `low`, `20` | AI defaults when a feature has no row in the admin (AI → Feature configuration) |
+| `AI_TIMEOUT_SECONDS`, `AI_PROVIDER_MAX_RETRIES`, `AI_DRAFT_TTL_HOURS`, `AI_STUCK_AFTER_MINUTES` | `20`, `1`, `24`, `5` | See [ai](ai.md#settings-environment) |
+| `AI_FORCE_PROVIDER` | empty | Forces a provider for every feature; tests set `fake` |
 
 Choose the settings module with `DJANGO_SETTINGS_MODULE`
 (`config.settings.dev` by default, `config.settings.prod` in production).
@@ -68,5 +72,7 @@ icon and its `view_*` permission; a test fails if a registered admin has no side
 - The health migrations run `CREATE EXTENSION pg_trgm` (food search). It is a
   trusted extension on PostgreSQL 13+, so the database owner can create it; on a
   managed database where that is blocked, create it once as an admin before migrating.
+- Set `ANTHROPIC_API_KEY` for the AI features; configure model and limits in the
+  admin (AI → Feature configuration). Check quality with `python manage.py try_meal_text`.
 - Load the food dataset with `python manage.py import_foods <file.csv>`; never run
   `seed_test_foods` in production (approximate test values).

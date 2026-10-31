@@ -23,6 +23,10 @@ vacations or sickness, and see their **streaks** and 30-day completion rate.
   - Streaks (current, longest, 30-day completion rate) recomputed in the background by Celery,
     including an hourly job for users whose local midnight just passed.
   - "Today" screen: what is due today, in the user's own time zone.
+- **AI meal logging from text** ("اكتب أكلك"): the user types what they ate in Arabic, English or
+  French; the AI extracts the foods, the backend matches them to the food table, the user edits
+  and confirms. Nothing is saved before confirmation. Provider-agnostic (Claude by default),
+  configured from the admin, with daily limits and a usage/cost log.
 - **Health** (round 3 of 4): the plan screen, foods and manual meal logging, the dashboard and health score.
   - Calories (Mifflin-St Jeor × activity, cut −15% / bulk +10%), protein, carbs, fat and water
     computed from goal, sex, weight, height, age and activity, or set manually.
@@ -107,6 +111,7 @@ apps/
   accounts/   users, auth, roles, profile selection
   tracking/   trackables, schedules, check-ins, pauses, streaks
   health/     plan and targets, weight, metric trackables, foods, meals
+  ai/         AI meal drafts (text), providers, configuration, usage
 config/       settings (base/dev/test/prod), URLs, Celery, idempotency, error handler
 docs/         project documentation
 tests/        cross-app tests
@@ -119,13 +124,14 @@ tests/        cross-app tests
 - [Profiles](docs/profiles.md): admin-defined presets, default profile, deactivation
 - [Tracking engine](docs/tracking.md): schedules, check-ins, pauses, streaks and their rules
 - [Health](docs/health.md): plan and targets, formulas, weight, metric trackables, foods (CSV format), meals, dashboard and health score
+- [AI](docs/ai.md): meal from text, providers, matching, configuration, limits and cost
 - [API reference](docs/api.md): endpoints, authentication, examples
 - [Development guide](docs/development.md): configuration, testing, conventions, deployment notes
 - [Changelog](docs/changelog.md): what has been built so far
 
 ## Roadmap
 
-- Health round 4: AI meal logging (text/photo); weekly charts and history summaries.
+- AI: meal from a photo, voice; health weekly charts and history summaries.
 - Other domain apps on top of the tracking engine: `spiritual` (prayers, Quran reading), `tasks`.
 - AI entry point (voice, photo, text) that proposes actions for the user to confirm.
 - Reminders and push notifications.

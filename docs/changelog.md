@@ -111,3 +111,25 @@ What has been built so far, oldest first.
 - New module pages: `docs/accounts.md`, `docs/profiles.md`.
 - `docs/tracking.md`: services, selectors, API, Celery tasks and admin sections.
 - `docs/architecture.md`: links to every module page; health status updated.
+
+## AI, round 1: meal from text
+
+- New `ai` app (nothing imports it). Flow: `POST /api/v1/ai/meal-drafts/` (202) →
+  Celery analysis → poll → PATCH edits → `confirm/` → `health.services.log_meal`
+  with `source=agent`. Nothing is written to meals before confirm.
+- Provider-agnostic layer (`structured()` interface); Anthropic adapter (official
+  SDK, structured outputs, no tools, refusal fallback where supported) and a fake
+  adapter for tests. Default model `claude-haiku-5-5`, effort `low`.
+- The AI only extracts; `health.selectors.match_foods` matches names to the Food
+  table (calories from the table), best match + 3 alternatives. Unmatched items:
+  AI estimate, saved on confirm as a private `source=ai` food, reused by name.
+- Strict schema + our own validation; invalid output → one retry → failed.
+  The user's text is data (wrapped, never instructions); 500-character limit.
+- Admin: per-feature configuration (enabled, provider, model, effort, daily limit),
+  editable price table, change history with old → new values, API key status
+  (keys stay in the environment), cached in Redis and invalidated on save.
+- Daily limit per user per local day (429 with `reset_at`); 503 `ai_disabled` when
+  off; `AIUsage` per call with tokens, cost and latency, daily totals in the admin.
+- Drafts expire after 24 h; a beat task fails stuck drafts every 5 minutes.
+- `python manage.py try_meal_text` to check quality by hand.
+- health: `Food.Source.AI`, `create_custom_food(source=...)`, `match_foods`.
