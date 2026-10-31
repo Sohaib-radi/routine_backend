@@ -4,7 +4,8 @@ Admin for the tracking engine (Unfold).
 Check-ins, pauses and streak caches are read-only here: check-ins must go
 through tracking.services.log_checkin (accumulation, streak recompute), pauses
 never rewrite history, and StreakCache is derived data. Trackables and their
-schedules/reminders can be edited for support.
+schedules/reminders can be edited for support, except the targets, dates and
+schedule of a managed trackable (managed_by set): those belong to its app.
 """
 
 from django.contrib import admin, messages
@@ -13,6 +14,7 @@ from unfold.admin import ModelAdmin, StackedInline, TabularInline
 from unfold.decorators import action
 
 from .models import CheckIn, Pause, Reminder, Schedule, StreakCache, Trackable
+from .services import MANAGED_FIELDS
 from .tasks import recompute_streak
 
 
@@ -30,6 +32,11 @@ class ScheduleInline(StackedInline):
     extra = 0
     fields = ['frequency', 'weekdays_mask', 'times_per_period', 'interval_days', 'rrule']
 
+    def has_change_permission(self, request, obj=None):
+        if obj is not None and obj.managed_by:
+            return False
+        return super().has_change_permission(request, obj)
+
 
 class ReminderInline(TabularInline):
     model = Reminder
@@ -44,8 +51,14 @@ class TrackableAdmin(ModelAdmin):
     list_select_related = ['user']
     search_fields = ['name', 'user__email']
     autocomplete_fields = ['user']
-    readonly_fields = ['created_at', 'updated_at']
+    readonly_fields = ['managed_by', 'created_at', 'updated_at']
     inlines = [ScheduleInline, ReminderInline]
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(super().get_readonly_fields(request, obj))
+        if obj is not None and obj.managed_by:
+            fields += sorted(MANAGED_FIELDS) + ['is_archived']
+        return fields
 
 
 @admin.register(CheckIn)

@@ -69,6 +69,11 @@ class Trackable(TimeStampedModel):
     # Domain-specific settings that don't deserve their own columns yet.
     config = models.JSONField(default=dict, blank=True)
 
+    # Empty: the user owns it. Otherwise the app that created it (e.g. 'health'): its
+    # target, unit, dates and schedule change only through that app, and it cannot
+    # be archived. tracking never interprets the value beyond comparing it.
+    managed_by = models.CharField(max_length=30, blank=True, default='', editable=False)
+
     class Meta:
         indexes = [
             models.Index(fields=['user', 'is_archived']),

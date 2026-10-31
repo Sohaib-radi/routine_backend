@@ -25,6 +25,8 @@ TRACKABLE_FIELDS = {
     'name', 'domain', 'kind', 'icon', 'color', 'target_value', 'unit', 'start_date', 'end_date', 'config',
 }
 SCHEDULE_FIELDS = {'frequency', 'weekdays_mask', 'times_per_period', 'interval_days', 'rrule'}
+# On a managed trackable (managed_by set), only the managing app may change these.
+MANAGED_FIELDS = {'domain', 'kind', 'target_value', 'unit', 'start_date', 'end_date'}
 
 
 def _queue_recompute(*trackable_ids) -> None:
@@ -57,17 +59,19 @@ def _decimal(value) -> Decimal:
 
 # ----------------------------- trackables ---------------------------------- #
 @transaction.atomic
-def create_trackable(user, *, name: str, schedule: dict | None = None, **fields) -> Trackable:
+def create_trackable(user, *, name: str, schedule: dict | None = None, managed_by: str = '',
+                     **fields) -> Trackable:
     """
     Create a trackable and its schedule together (every trackable has one).
     `start_date` defaults to the user's today; `schedule` defaults to daily.
+    `managed_by` (e.g. 'health') makes the calling app the owner of its targets.
     """
     unknown = (set(fields) - TRACKABLE_FIELDS) | (set(schedule or {}) - SCHEDULE_FIELDS)
     if unknown:
         raise ValidationError(f'Unknown fields: {", ".join(sorted(unknown))}.')
     fields.setdefault('start_date', user_today(user))
 
-    trackable = Trackable(user=user, name=name, **fields)
+    trackable = Trackable(user=user, name=name, managed_by=managed_by, **fields)
     trackable.full_clean()
     trackable.save()
 
@@ -83,16 +87,20 @@ _RECOMPUTE_FIELDS = {'start_date', 'end_date'}
 
 
 @transaction.atomic
-def update_trackable(user, trackable, *, schedule: dict | None = None, **fields) -> Trackable:
+def update_trackable(user, trackable, *, schedule: dict | None = None, managed_by: str = '',
+                     **fields) -> Trackable:
     """
     Edit a trackable and/or its schedule. `kind` cannot change (stored values would
     lose their meaning), and `start_date` cannot move past existing check-ins.
     A new target applies from now on: past check-ins keep the status they were given.
+    On a managed trackable, MANAGED_FIELDS and the schedule change only when the
+    caller passes the same `managed_by` (the API never does).
     """
     unknown = (set(fields) - TRACKABLE_FIELDS) | (set(schedule or {}) - SCHEDULE_FIELDS)
     if unknown:
         raise ValidationError(f'Unknown fields: {", ".join(sorted(unknown))}.')
     trackable = _owned_trackable(user, trackable, lock=True)
+    _check_managed(trackable, managed_by, fields, schedule)
 
     if 'kind' in fields and fields['kind'] != trackable.kind:
         raise ValidationError({'kind': 'The kind of a trackable cannot change.'})
@@ -118,10 +126,26 @@ def update_trackable(user, trackable, *, schedule: dict | None = None, **fields)
     return trackable
 
 
+def _check_managed(trackable, managed_by, fields=None, schedule=None) -> None:
+    """Refuse changes to a managed trackable's targets unless its managing app makes them."""
+    if not trackable.managed_by or managed_by == trackable.managed_by:
+        return
+    if fields is None:  # archive / unarchive
+        raise ValidationError({'trackable': f'This trackable is managed by {trackable.managed_by} '
+                                            'and cannot be archived.'})
+    changed = sorted(n for n in MANAGED_FIELDS & set(fields) if getattr(trackable, n) != fields[n])
+    if schedule and any(getattr(trackable.schedule, n) != v for n, v in schedule.items()):
+        changed.append('schedule')
+    if changed:
+        message = f'Managed by {trackable.managed_by}: change it there.'
+        raise ValidationError({name: message for name in changed})
+
+
 @transaction.atomic
-def archive_trackable(user, trackable) -> Trackable:
+def archive_trackable(user, trackable, managed_by: str = '') -> Trackable:
     """Hide a trackable from Today and stop new check-ins. History and streak stay."""
     trackable = _owned_trackable(user, trackable, lock=True)
+    _check_managed(trackable, managed_by)
     if not trackable.is_archived:
         trackable.is_archived = True
         trackable.save(update_fields=['is_archived', 'updated_at'])
@@ -129,8 +153,9 @@ def archive_trackable(user, trackable) -> Trackable:
 
 
 @transaction.atomic
-def unarchive_trackable(user, trackable) -> Trackable:
+def unarchive_trackable(user, trackable, managed_by: str = '') -> Trackable:
     trackable = _owned_trackable(user, trackable, lock=True)
+    _check_managed(trackable, managed_by)
     if trackable.is_archived:
         trackable.is_archived = False
         trackable.save(update_fields=['is_archived', 'updated_at'])

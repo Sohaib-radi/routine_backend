@@ -44,10 +44,10 @@ class TrackableSerializer(serializers.ModelSerializer):
         model = Trackable
         fields = [
             'id', 'name', 'domain', 'kind', 'icon', 'color', 'target_value', 'unit',
-            'start_date', 'end_date', 'is_archived', 'config', 'schedule', 'streak',
+            'start_date', 'end_date', 'is_archived', 'config', 'schedule', 'streak', 'managed_by',
             'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'is_archived', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'is_archived', 'managed_by', 'created_at', 'updated_at']
         extra_kwargs = {'start_date': {'required': False, 'help_text': "Defaults to the user's today."}}
 
     def to_representation(self, instance):
