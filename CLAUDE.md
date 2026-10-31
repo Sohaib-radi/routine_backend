@@ -28,8 +28,8 @@ ai  ──►  health / spiritual / tasks  ──►  tracking  ──►  accou
   same domain services as manual input. AI never has its own write path.
 
   ```
-  Manual: POST /api/v1/health/meals/ → health.services → tracking.services
-  AI:     POST /api/v1/ai/...        → proposal → user confirms → health.services → tracking.services
+  Manual: POST /api/v1/health/meals/ → health.services
+  AI:     POST /api/v1/ai/...        → proposal → user confirms → health.services
   ```
 - A lower app never imports a higher one. `tracking` knows nothing about `health`.
 - `profiles` holds admin-defined presets (color, avatar, notification style) that
@@ -44,8 +44,9 @@ ai  ──►  health / spiritual / tasks  ──►  tracking  ──►  accou
   Domain apps (health, spiritual, tasks) store their own data and plug into `tracking`.
 - Do not re-implement scheduling, check-ins, pauses or streaks inside a domain app.
 
-Example: a user logs lunch. `health` stores the meal and food items, then calls
-`tracking.services.log_checkin()` to record calories for the day.
+Example (health): meals are the source of truth for calories and macros; daily
+totals are computed from meals. Water, sleep, steps and activity are tracking
+trackables created by health.
 
 Layout of each app:
 
