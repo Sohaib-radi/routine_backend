@@ -80,6 +80,23 @@ Gated by Django model permissions (including `view_*` for reads).
 | GET | `/tracking/pauses/{id}/` | Read a pause |
 | POST | `/tracking/pauses/{id}/end/` | Resume (`last_paused_day` optional); `204` if it was cancelled |
 
+Trackables have a read-only `managed_by` field. When it is set (e.g. `health`), the
+target, unit, kind, domain, dates and schedule cannot be changed here and the
+trackable cannot be archived (`400`); change them through the owning module.
+
+### Health
+
+See [health](health.md) for the formulas and rules.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/health/plan/preview/` | Calculate the targets ("Calculate" button). Saves nothing. |
+| GET | `/health/plan/` | Current plan, with `weight_kg` (latest) and `bmi`. `404` before the first plan. |
+| POST | `/health/plan/` | Confirm the plan (`201`): new version effective today, today's weight, metric trackables updated |
+| GET | `/health/plan/history/` | Every version, newest first |
+| GET | `/health/weight/` | Weight history, newest first |
+| POST | `/health/weight/` | Log a weight (`weight_kg`, optional `date`: last 30 days); same day replaces |
+
 List endpoints are paginated (50 per page, `?page=`), except profiles, permissions
 and check-in history.
 
@@ -121,6 +138,22 @@ Pause everything for a vacation:
 POST /api/v1/tracking/pauses/
 {"trackable_id": null, "start_date": "2026-11-10", "end_date": "2026-11-20", "reason": "vacation"}
 ```
+
+Preview or confirm a plan (auto mode):
+
+```http
+POST /api/v1/health/plan/preview/
+{"goal": "cut", "sex": "male", "weight_kg": "80", "height_cm": "178", "age": 24, "activity_level": "light"}
+```
+
+```json
+{"calories": 2100, "protein_g": 160, "carbs_g": 235, "fat_g": 58, "water_ml": 4000,
+ "steps": 8000, "activity_minutes": 30, "sleep_hours": "8.0", "calorie_floor_applied": false}
+```
+
+Manual mode adds `"mode": "manual", "calories": 2000, "protein_g": 150`; manual water
+adds `"water_mode": "manual", "water_ml": 3000`. When `calorie_floor_applied` is
+`true`, the calories were raised to the safety floor: show the user a message.
 
 ## Idempotency keys
 

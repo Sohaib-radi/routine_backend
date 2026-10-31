@@ -24,8 +24,32 @@
 | `start_date`, `end_date` | User's local dates. `start_date` defaults to today. |
 | `is_archived` | The user stopped this habit. Archived trackables accept no check-ins. |
 | `config` | JSON for domain-specific settings. |
+| `managed_by` | Empty for the user's own trackables; otherwise the app that created it (e.g. `health`). See [managed trackables](#managed-trackables). |
 
 Trackables are never deleted through the API: their check-ins are history. Archive them instead.
+
+### Managed trackables
+
+Some trackables are created by a domain app, which owns their targets. Example:
+`health` creates water, sleep, steps and activity trackables whose targets come
+from the user's plan ([health](health.md)). They have `managed_by='health'`.
+
+On a managed trackable, `tracking.services` refuses (with a `400` in the API):
+
+- changes to `target_value`, `unit`, `kind`, `domain`, `start_date`, `end_date` and the schedule,
+- archiving and unarchiving,
+
+unless the caller passes the same `managed_by` (`update_trackable(...,
+managed_by='health')`). The tracking API never passes it, so the plan and its
+trackables cannot drift apart. Sending an unchanged value is accepted, so clients
+that send the whole object back still work.
+
+Still allowed for everyone: renaming, icon, colour, and check-ins as usual.
+`managed_by` is read-only in the API and the admin; in the admin, the locked fields
+and the schedule are read-only too.
+
+tracking never interprets the value beyond comparing it, so it still knows nothing
+about `health`.
 
 ### Schedule
 

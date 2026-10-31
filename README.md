@@ -23,6 +23,13 @@ vacations or sickness, and see their **streaks** and 30-day completion rate.
   - Streaks (current, longest, 30-day completion rate) recomputed in the background by Celery,
     including an hourly job for users whose local midnight just passed.
   - "Today" screen: what is due today, in the user's own time zone.
+- **Health** (round 1 of 4): the plan screen.
+  - Calories (Mifflin-St Jeor × activity, cut −15% / bulk +10%), protein, carbs, fat and water
+    computed from goal, sex, weight, height, age and activity, or set manually.
+  - Safety floor (1500 kcal men, 1200 women), age 18+.
+  - Plan history: changing the plan never changes past dates. Weight log and computed BMI.
+  - Water, sleep, steps and activity trackables created in the tracking engine, with
+    targets owned by the plan.
 - **Idempotency keys** on check-in endpoints, so a retry on a flaky mobile network never counts twice.
 - **Admin panel** (Django Unfold) in English, Arabic and French, with roles and permissions.
 - **API docs**: interactive Swagger UI and an OpenAPI 3 schema.
@@ -91,6 +98,7 @@ apps/
   profiles/   admin-defined presets (lowest layer)
   accounts/   users, auth, roles, profile selection
   tracking/   trackables, schedules, check-ins, pauses, streaks
+  health/     plan and targets, weight, metric trackables
 config/       settings (base/dev/test/prod), URLs, Celery, idempotency, error handler
 docs/         project documentation
 tests/        cross-app tests
@@ -100,14 +108,15 @@ tests/        cross-app tests
 
 - [Architecture](docs/architecture.md): apps, dependency rules, design principles
 - [Tracking engine](docs/tracking.md): schedules, check-ins, pauses, streaks and their rules
+- [Health](docs/health.md): plan and targets, formulas, weight, metric trackables
 - [API reference](docs/api.md): endpoints, authentication, examples
 - [Development guide](docs/development.md): configuration, testing, conventions, deployment notes
 - [Changelog](docs/changelog.md): what has been built so far
 
 ## Roadmap
 
-- Domain apps on top of the tracking engine: `health` (meals, water, workouts),
-  `spiritual` (prayers, Quran reading), `tasks`.
+- Health rounds 2–4: meals and food table, health dashboard, health score.
+- Other domain apps on top of the tracking engine: `spiritual` (prayers, Quran reading), `tasks`.
 - AI entry point (voice, photo, text) that proposes actions for the user to confirm.
 - Reminders and push notifications.
 - Streaks for "X times per week/month" schedules.
