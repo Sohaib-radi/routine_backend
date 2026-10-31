@@ -11,6 +11,7 @@ api_v1 = [
     path('', include('apps.accounts.api.urls')),
     path('', include('apps.profiles.api.urls')),
     path('tracking/', include('apps.tracking.api.urls')),
+    path('health/', include('apps.health.api.urls')),
 ]
 
 urlpatterns = [

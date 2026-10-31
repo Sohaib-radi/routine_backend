@@ -154,6 +154,9 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,  # separate request/response components for generated clients
     'SCHEMA_PATH_PREFIX': r'/api/v1',
+    'ENUM_NAME_OVERRIDES': {
+        'PlanModeEnum': 'apps.health.calculations.Mode',  # used by both mode and water_mode
+    },
 }
 
 
