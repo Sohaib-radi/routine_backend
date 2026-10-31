@@ -96,6 +96,16 @@ See [health](health.md) for the formulas and rules.
 | GET | `/health/plan/history/` | Every version, newest first |
 | GET | `/health/weight/` | Weight history, newest first |
 | POST | `/health/weight/` | Log a weight (`weight_kg`, optional `date`: last 30 days); same day replaces |
+| GET | `/health/foods/?q=&limit=` | Search foods in ar/en/fr (min 2 chars; default 20, max 50) |
+| GET | `/health/foods/{id}/` | A food with its portions (labels in ar/en/fr) |
+| POST | `/health/foods/` | Create a private custom food (`201`) |
+| PATCH / DELETE | `/health/foods/{id}/` | Edit / delete **your own** custom food (`404` for global foods) |
+| GET | `/health/meals/?date=` | A day's meals (default today) with items and per-meal totals |
+| POST | `/health/meals/` | Log a meal and its items (`201`). Supports `Idempotency-Key`. |
+| PATCH / DELETE | `/health/meals/{id}/` | Edit `date`, `meal_type`, `note` / delete. Today and yesterday only. |
+| POST | `/health/meals/{id}/items/` | Add an item (`201`). Supports `Idempotency-Key`. |
+| PATCH / DELETE | `/health/meals/{id}/items/{item_id}/` | Edit / remove an item. The last item cannot be removed (`400`). |
+| GET | `/health/nutrition/?date=` | Daily totals, targets from that day's plan, remaining |
 
 List endpoints are paginated (50 per page, `?page=`), except profiles, permissions
 and check-in history.
@@ -155,9 +165,35 @@ Manual mode adds `"mode": "manual", "calories": 2000, "protein_g": 150`; manual 
 adds `"water_mode": "manual", "water_ml": 3000`. When `calorie_floor_applied` is
 `true`, the calories were raised to the safety floor: show the user a message.
 
+Log a meal (portion or grams per item; `date` defaults to today):
+
+```http
+POST /api/v1/health/meals/
+Idempotency-Key: 8b1d2f4e-...
+{
+  "meal_type": "lunch",
+  "items": [
+    {"food_id": "<koshari uuid>", "portion": "plate"},
+    {"food_id": "<egg uuid>", "portion": "piece", "quantity": 2}
+  ]
+}
+```
+
+An item can also give grams instead of a portion: `{"food_id": "<uuid>", "grams": 50}`.
+
+Daily nutrition after that meal (plan of the reference case):
+
+```json
+{"date": "2026-03-10",
+ "totals":    {"kcal": "680.0",  "protein_g": "30.5",  "carbs_g": "95.6",  "fat_g": "19.8"},
+ "targets":   {"kcal": "2100.0", "protein_g": "160.0", "carbs_g": "235.0", "fat_g": "58.0"},
+ "remaining": {"kcal": "1420.0", "protein_g": "129.5", "carbs_g": "139.4", "fat_g": "38.2"}}
+```
+
 ## Idempotency keys
 
-`POST /tracking/checkins/` and `POST /tracking/checkins/skip/` accept an optional
+`POST /tracking/checkins/`, `POST /tracking/checkins/skip/`, `POST /health/meals/`
+and `POST /health/meals/{id}/items/` accept an optional
 `Idempotency-Key` header (for example a UUID generated per user action). Keys are
 scoped per user and kept 24 hours in Redis.
 

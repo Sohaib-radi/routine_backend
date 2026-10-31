@@ -64,3 +64,20 @@ What has been built so far, oldest first.
   steps and activity trackables (exactly one each).
 - API: `/api/v1/health/plan/preview/`, `plan/`, `plan/history/`, `weight/`.
 - CLAUDE.md: meals (not check-ins) are the source of truth for calories and macros.
+
+## Health, round 2: foods and manual meals
+
+- Food database: `Food` (names ar/en/fr, aliases, category, nutrition per 100 g,
+  source, `is_verified`, `is_active`; global or private custom) and `FoodPortion`
+  (fixed list of units with ar/en/fr labels, incl. sandwich, bowl, handful).
+- Search over names and aliases in all languages with Arabic normalization
+  (أ إ آ → ا, ة → ه, ى → ي, tashkeel/tatweel removed) and a pg_trgm index.
+- `import_foods` (idempotent, all-or-nothing CSV import) and `seed_test_foods`
+  (~20 approximate test foods, unverified). Staff edit foods in the admin.
+- Custom foods: create, edit and delete your own (never global ones).
+- Meals and items with the snapshot rule: names, grams and nutrition copied at
+  logging time; totals always from snapshots. Portions or grams. Today/yesterday
+  window. Several meals per type per day; the last item cannot be removed.
+- `daily_nutrition`: totals vs the targets of the plan that applied that day.
+- API: `foods/`, `meals/`, `meals/{id}/items/`, `nutrition/`; Idempotency-Key on
+  meal and item creation. Fixed query counts for meals and nutrition.

@@ -61,3 +61,8 @@ default only through dedicated actions so users stay consistent.
   HTTPS redirects, HSTS and secure cookies, and logs to the console.
 - Run `python manage.py collectstatic` and serve `staticfiles/`.
 - Run at least one Celery worker and **exactly one** Celery beat process.
+- The health migrations run `CREATE EXTENSION pg_trgm` (food search). It is a
+  trusted extension on PostgreSQL 13+, so the database owner can create it; on a
+  managed database where that is blocked, create it once as an admin before migrating.
+- Load the food dataset with `python manage.py import_foods <file.csv>`; never run
+  `seed_test_foods` in production (approximate test values).
