@@ -175,6 +175,16 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_ALWAYS_EAGER = False
 CELERY_TIMEZONE = 'UTC'
 
+# Celery beat (`celery -A config beat`): periodic tasks.
+from celery.schedules import crontab  # noqa: E402
+
+CELERY_BEAT_SCHEDULE = {
+    'recompute-streaks-after-local-midnight': {
+        'task': 'apps.tracking.tasks.recompute_streaks_after_local_midnight',
+        'schedule': crontab(minute=1),  # every hour, just after the full hour
+    },
+}
+
 
 # Email
 

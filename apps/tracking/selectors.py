@@ -5,9 +5,11 @@ Celery tasks call these; nothing else re-implements "is it due?" or streak rules
 
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 from decimal import Decimal
 
 from dateutil.rrule import rrulestr
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 
@@ -168,6 +170,32 @@ def pauses_for(user, *, active: bool | None = None):
     today = user_today(user)
     current = Q(end_date__isnull=True) | Q(end_date__gte=today)
     return qs.filter(current) if active else qs.exclude(current)
+
+
+# ----------------------------- new local day ------------------------------- #
+def timezones_with_new_day(start: datetime, end: datetime) -> list[str]:
+    """
+    The users' timezones whose local date changed between the instants `start` and
+    `end` (UTC-aware): their midnight passed in that interval. Compares dates rather
+    than looking for "hour 0", so DST days where local midnight is skipped (e.g.
+    Cairo on 2026-04-24, 23:00 -> 01:00) or repeated are each caught exactly once.
+    """
+    zones = get_user_model().objects.values_list('timezone', flat=True).distinct()
+    return sorted(
+        tz for tz in zones
+        if start.astimezone(ZoneInfo(tz)).date() != end.astimezone(ZoneInfo(tz)).date()
+    )
+
+
+def trackable_ids_for_new_day(start: datetime, end: datetime) -> list:
+    """Non-archived trackables of users whose local midnight passed in (start, end]."""
+    zones = timezones_with_new_day(start, end)
+    if not zones:
+        return []
+    return list(
+        Trackable.objects.filter(user__timezone__in=zones, user__is_active=True, is_archived=False)
+        .order_by('pk').values_list('pk', flat=True)
+    )
 
 
 # ----------------------------- streaks ------------------------------------- #
