@@ -1,15 +1,17 @@
 """Read queries for health. Every query is scoped to the given user."""
 
 import re
+from dataclasses import dataclass
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.contrib.postgres.search import TrigramWordSimilarity
-from django.db.models import Case, IntegerField, Q, Value, When
+from django.db.models import Case, IntegerField, Prefetch, Q, Sum, Value, When
+from django.db.models.functions import Coalesce
 
 from apps.tracking.dates import user_today
 
-from .models import Food, HealthMetric, HealthPlan, WeightEntry
+from .models import Food, HealthMetric, HealthPlan, Meal, MealItem, WeightEntry
 from .text import normalize
 
 
@@ -107,3 +109,55 @@ def search_foods(user, query: str, limit: int = SEARCH_DEFAULT_LIMIT) -> list[Fo
         .order_by('rank', '-similarity', 'name_en', 'pk')
         .prefetch_related('portions')[:limit]
     )
+
+
+# ----------------------------- meals & nutrition --------------------------- #
+@dataclass(frozen=True)
+class Nutrients:
+    kcal: Decimal
+    protein_g: Decimal
+    carbs_g: Decimal
+    fat_g: Decimal
+
+    def __sub__(self, other: 'Nutrients') -> 'Nutrients':
+        return Nutrients(*(getattr(self, f) - getattr(other, f) for f in NUTRIENT_FIELDS))
+
+
+NUTRIENT_FIELDS = ('kcal', 'protein_g', 'carbs_g', 'fat_g')
+ZERO = Nutrients(Decimal(0), Decimal(0), Decimal(0), Decimal(0))
+
+
+def meals_for(user, d: date):
+    """The user's meals on local date `d`, with their items. Two queries whatever the number of meals."""
+    return (Meal.objects.filter(user=user, date=d).order_by('created_at')
+            .prefetch_related(Prefetch('items', queryset=MealItem.objects.order_by('created_at'))))
+
+
+def meal_totals(meal: Meal) -> Nutrients:
+    """Totals of one meal from its items' snapshots (uses the prefetched items)."""
+    items = list(meal.items.all())
+    return Nutrients(*(sum((getattr(i, f) for i in items), Decimal(0)) for f in NUTRIENT_FIELDS))
+
+
+@dataclass(frozen=True)
+class DailyNutrition:
+    date: date
+    totals: Nutrients
+    targets: Nutrients | None    # from the plan that applied on that date; None before the first plan
+    remaining: Nutrients | None  # targets - totals (negative when over)
+
+
+def daily_nutrition(user, d: date) -> DailyNutrition:
+    """
+    What the calories ring and macro cards show: totals from the meal snapshots,
+    the targets of the plan that applied on `d`, and what remains. Two queries.
+    """
+    sums = MealItem.objects.filter(meal__user=user, meal__date=d).aggregate(
+        **{f: Coalesce(Sum(f), Decimal(0)) for f in NUTRIENT_FIELDS}
+    )
+    totals = Nutrients(**sums)
+    plan = plan_for(user, d)
+    if plan is None:
+        return DailyNutrition(d, totals, None, None)
+    targets = Nutrients(Decimal(plan.calories), Decimal(plan.protein_g), Decimal(plan.carbs_g), Decimal(plan.fat_g))
+    return DailyNutrition(d, totals, targets, targets - totals)
