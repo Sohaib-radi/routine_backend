@@ -1,6 +1,7 @@
 import threading
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal
+from unittest.mock import patch
 
 import pytest
 from django.core.exceptions import ValidationError
@@ -16,6 +17,22 @@ D = date(2026, 1, 1)  # a Thursday
 
 def day(n: int) -> date:
     return D + timedelta(days=n)
+
+
+def as_of(d: date):
+    """Freeze the clock at noon UTC on `d`, so `d` is "today" for a UTC user."""
+    return patch('django.utils.timezone.now', return_value=datetime(d.year, d.month, d.day, 12, tzinfo=dt_timezone.utc))
+
+
+def log(user, trackable, d, **kwargs):
+    """Build history: log a check-in on the day it happened (the backfill window is today/yesterday)."""
+    with as_of(d):
+        return services.log_checkin(user, trackable, d, **kwargs)
+
+
+def skip(user, trackable, d, **kwargs):
+    with as_of(d):
+        return services.skip_checkin(user, trackable, d, **kwargs)
 
 
 @pytest.fixture
@@ -100,43 +117,43 @@ class TestCreateTrackable:
 # ----------------------------- log_checkin --------------------------------- #
 class TestLogCheckin:
     def test_quantity_accumulates_into_one_row(self, user, water):
-        first = services.log_checkin(user, water, day(3), value=2, source=CheckIn.Source.VOICE)
+        first = log(user, water, day(3), value=2, source=CheckIn.Source.VOICE)
         assert (first.value, first.status) == (Decimal('2.00'), CheckIn.Status.PARTIAL)
 
-        second = services.log_checkin(user, water, day(3), value=1)
+        second = log(user, water, day(3), value=1)
         assert second.pk == first.pk
         assert second.value == Decimal('3.00')
         assert CheckIn.objects.filter(trackable=water, date=day(3)).count() == 1
 
-        done = services.log_checkin(user, water, day(3), value=Decimal('5'))
+        done = log(user, water, day(3), value=Decimal('5'))
         assert (done.value, done.status) == (Decimal('8.00'), CheckIn.Status.DONE)
         assert CheckIn.objects.count() == 1
 
     def test_keeps_the_first_source(self, user, water):
-        services.log_checkin(user, water, day(3), value=2, source=CheckIn.Source.VOICE)
-        checkin = services.log_checkin(user, water, day(3), value=1, source=CheckIn.Source.MANUAL)
+        log(user, water, day(3), value=2, source=CheckIn.Source.VOICE)
+        checkin = log(user, water, day(3), value=1, source=CheckIn.Source.MANUAL)
         assert checkin.source == CheckIn.Source.VOICE
 
     def test_other_days_get_their_own_rows(self, user, water):
-        services.log_checkin(user, water, day(3), value=2)
-        services.log_checkin(user, water, day(4), value=2)
+        log(user, water, day(3), value=2)
+        log(user, water, day(4), value=2)
         assert CheckIn.objects.count() == 2
 
     def test_boolean_logged_twice_stays_one_done_row(self, user, habit):
-        services.log_checkin(user, habit, day(3))
-        checkin = services.log_checkin(user, habit, day(3), value=5)
+        log(user, habit, day(3))
+        checkin = log(user, habit, day(3), value=5)
         assert CheckIn.objects.count() == 1
         assert (checkin.status, checkin.value) == (CheckIn.Status.DONE, None)
 
     def test_notes_are_appended(self, user, water):
-        services.log_checkin(user, water, day(3), value=1, note='morning')
-        checkin = services.log_checkin(user, water, day(3), value=1, note='lunch')
+        log(user, water, day(3), value=1, note='morning')
+        checkin = log(user, water, day(3), value=1, note='lunch')
         assert checkin.note == 'morning\nlunch'
 
     def test_quantity_requires_a_positive_value(self, user, water):
         for value in (None, 0, -1, 'abc', 'NaN'):
             with pytest.raises(ValidationError):
-                services.log_checkin(user, water, day(3), value=value)
+                log(user, water, day(3), value=value)
         assert not CheckIn.objects.exists()
 
     def test_refuses_another_users_trackable(self, make_user, habit):
@@ -149,15 +166,15 @@ class TestLogCheckin:
         with pytest.raises(ValidationError):
             services.log_checkin(user, habit, services.user_today(user) + timedelta(days=1))
         with pytest.raises(ValidationError):
-            services.log_checkin(user, habit, D - timedelta(days=1))
+            log(user, habit, D - timedelta(days=1))  # before the trackable started
 
     def test_refuses_unknown_source(self, user, habit):
         with pytest.raises(ValidationError):
-            services.log_checkin(user, habit, day(3), source='telepathy')
+            log(user, habit, day(3), source='telepathy')
 
     def test_logging_a_skipped_day_turns_it_into_a_checkin(self, user, habit):
-        services.skip_checkin(user, habit, day(3))
-        checkin = services.log_checkin(user, habit, day(3))
+        skip(user, habit, day(3))
+        checkin = log(user, habit, day(3))
         assert checkin.status == CheckIn.Status.DONE
         assert CheckIn.objects.count() == 1
 
@@ -168,6 +185,61 @@ class TestLogCheckin:
         assert StreakCache.objects.get(trackable=habit).current == 1  # eager Celery in tests
 
 
+class TestBackfillWindow:
+    """Rule 3: check-ins are accepted for today and yesterday only (user's local date)."""
+
+    def test_today_and_yesterday_are_accepted(self, user, habit, freeze_utc):
+        freeze_utc(2026, 1, 10, 12, 0)
+        services.log_checkin(user, habit, date(2026, 1, 10))
+        services.log_checkin(user, habit, date(2026, 1, 9))
+        assert CheckIn.objects.count() == 2
+
+    def test_older_dates_are_refused(self, user, habit, freeze_utc):
+        freeze_utc(2026, 1, 10, 12, 0)
+        for d in (date(2026, 1, 8), date(2026, 1, 2)):
+            with pytest.raises(ValidationError, match='today or yesterday'):
+                services.log_checkin(user, habit, d)
+        assert not CheckIn.objects.exists()
+
+    def test_future_dates_are_refused(self, user, habit, freeze_utc):
+        freeze_utc(2026, 1, 10, 12, 0)
+        with pytest.raises(ValidationError, match='future'):
+            services.log_checkin(user, habit, date(2026, 1, 11))
+
+    def test_yesterday_accumulates_too(self, user, water, freeze_utc):
+        freeze_utc(2026, 1, 10, 12, 0)
+        services.log_checkin(user, water, date(2026, 1, 9), value=2)
+        checkin = services.log_checkin(user, water, date(2026, 1, 9), value=3)
+        assert checkin.value == Decimal('5.00') and CheckIn.objects.count() == 1
+
+    def test_window_follows_the_users_local_date(self, make_user, freeze_utc):
+        # Monday 2026-01-12 23:30 UTC = Tuesday 01:30 in Cairo.
+        freeze_utc(2026, 1, 12, 23, 30)
+        cairo, utc = make_user(timezone='Africa/Cairo'), make_user(timezone='UTC')
+        t_cairo = services.create_trackable(cairo, name='Read', start_date=D)
+        t_utc = services.create_trackable(utc, name='Read', start_date=D)
+        # Cairo: today Tue 13, yesterday Mon 12; Sunday 11 is too old.
+        services.log_checkin(cairo, t_cairo, date(2026, 1, 12))
+        with pytest.raises(ValidationError):
+            services.log_checkin(cairo, t_cairo, date(2026, 1, 11))
+        # UTC: today Mon 12, so Sunday 11 is yesterday; Tuesday 13 is the future.
+        services.log_checkin(utc, t_utc, date(2026, 1, 11))
+        with pytest.raises(ValidationError):
+            services.log_checkin(utc, t_utc, date(2026, 1, 13))
+
+    @pytest.mark.parametrize('source', ['voice', 'photo', 'agent', 'import'])
+    def test_applies_to_every_source(self, user, habit, freeze_utc, source):
+        freeze_utc(2026, 1, 10, 12, 0)
+        with pytest.raises(ValidationError):
+            services.log_checkin(user, habit, date(2026, 1, 7), source=source)
+
+    def test_applies_to_skips(self, user, habit, freeze_utc):
+        freeze_utc(2026, 1, 10, 12, 0)
+        services.skip_checkin(user, habit, date(2026, 1, 9))
+        with pytest.raises(ValidationError):
+            services.skip_checkin(user, habit, date(2026, 1, 8))
+
+
 @pytest.mark.django_db(transaction=True, serialized_rollback=True)
 def test_concurrent_first_logs_accumulate_into_one_row(user):
     """Two devices log water at the same moment: one row, both values counted."""
@@ -175,7 +247,7 @@ def test_concurrent_first_logs_accumulate_into_one_row(user):
     barrier = threading.Barrier(2)
     errors = []
 
-    def log(value):
+    def log_value(value):
         try:
             barrier.wait()
             services.log_checkin(user, water, day(3), value=value)
@@ -184,11 +256,12 @@ def test_concurrent_first_logs_accumulate_into_one_row(user):
         finally:
             connection.close()
 
-    threads = [threading.Thread(target=log, args=(v,)) for v in (2, 3)]
-    for thread in threads:
-        thread.start()
-    for thread in threads:
-        thread.join()
+    threads = [threading.Thread(target=log_value, args=(v,)) for v in (2, 3)]
+    with as_of(day(3)):
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
 
     assert errors == []
     checkin = CheckIn.objects.get(trackable=water, date=day(3))
@@ -198,18 +271,18 @@ def test_concurrent_first_logs_accumulate_into_one_row(user):
 # ----------------------------- skip_checkin -------------------------------- #
 class TestSkip:
     def test_skip_records_a_skipped_row(self, user, habit):
-        assert services.skip_checkin(user, habit, day(3)).status == CheckIn.Status.SKIPPED
+        assert skip(user, habit, day(3)).status == CheckIn.Status.SKIPPED
 
     def test_cannot_skip_a_day_already_checked_in(self, user, habit):
-        services.log_checkin(user, habit, day(3))
+        log(user, habit, day(3))
         with pytest.raises(ValidationError):
-            services.skip_checkin(user, habit, day(3))
+            skip(user, habit, day(3))
 
 
 # ----------------------------- pauses -------------------------------------- #
 class TestPauses:
     def test_pause_never_touches_checkins(self, user, habit):
-        services.log_checkin(user, habit, day(3))
+        log(user, habit, day(3))
         before = list(CheckIn.objects.values())
         services.create_pause(user, start_date=day(1), end_date=day(5))
         services.create_pause(user, start_date=day(2), trackable=habit)
@@ -287,47 +360,47 @@ class TestSchedule:
 class TestStreak:
     def test_consecutive_days(self, user, habit):
         for n in range(5):
-            services.log_checkin(user, habit, day(n))
+            log(user, habit, day(n))
         stats = selectors.compute_streak(habit, today=day(4))
         assert (stats.current, stats.longest) == (5, 5)
 
     def test_missed_day_breaks_the_streak(self, user, habit):
         for n in (0, 1, 2, 4, 5):
-            services.log_checkin(user, habit, day(n))
+            log(user, habit, day(n))
         stats = selectors.compute_streak(habit, today=day(5))
         assert (stats.current, stats.longest) == (2, 3)
 
     def test_today_not_done_yet_does_not_break(self, user, habit):
         for n in range(3):
-            services.log_checkin(user, habit, day(n))
+            log(user, habit, day(n))
         assert selectors.compute_streak(habit, today=day(3)).current == 3
 
     def test_partial_day_breaks(self, user, water):
-        services.log_checkin(user, water, day(0), value=8)
-        services.log_checkin(user, water, day(1), value=3)  # partial
-        services.log_checkin(user, water, day(2), value=8)
+        log(user, water, day(0), value=8)
+        log(user, water, day(1), value=3)  # partial
+        log(user, water, day(2), value=8)
         assert selectors.compute_streak(water, today=day(2)).current == 1
 
     def test_paused_days_are_skipped(self, user, habit):
         # done 0-1, paused 2-4 (no check-ins), done 5-6: streak continues through the pause.
         for n in (0, 1, 5, 6):
-            services.log_checkin(user, habit, day(n))
+            log(user, habit, day(n))
         services.create_pause(user, start_date=day(2), end_date=day(4), reason=Pause.Reason.VACATION)
         stats = selectors.compute_streak(habit, today=day(6))
         assert (stats.current, stats.longest) == (4, 4)  # paused days don't extend it either
 
     def test_trackable_specific_and_open_ended_pauses(self, user, habit, water):
         for n in (0, 1):
-            services.log_checkin(user, habit, day(n))
+            log(user, habit, day(n))
         services.create_pause(user, start_date=day(2), trackable=habit)  # open-ended
         assert selectors.compute_streak(habit, today=day(9)).current == 2
         # another trackable's pause doesn't protect this one
-        services.log_checkin(user, water, day(0), value=8)
+        log(user, water, day(0), value=8)
         assert selectors.compute_streak(water, today=day(9)).current == 0
 
     def test_checkin_during_pause_is_kept_but_neutral(self, user, habit):
-        services.log_checkin(user, habit, day(0))
-        services.log_checkin(user, habit, day(1))
+        log(user, habit, day(0))
+        log(user, habit, day(1))
         services.create_pause(user, start_date=day(1), end_date=day(1))
         assert CheckIn.objects.filter(date=day(1)).exists()  # history untouched
         assert selectors.compute_streak(habit, today=day(1)).current == 1
@@ -337,7 +410,7 @@ class TestStreak:
         t = services.create_trackable(user, name='Gym', start_date=D,
                                       schedule={'frequency': 'weekdays', 'weekdays_mask': 1 | 4 | 16})
         for n in (1, 4, 6, 8):
-            services.log_checkin(user, t, day(n))
+            log(user, t, day(n))
         stats = selectors.compute_streak(t, today=day(9))
         assert (stats.current, stats.longest) == (4, 4)
 
@@ -345,20 +418,20 @@ class TestStreak:
         t = services.create_trackable(user, name='Gym', start_date=D,
                                       schedule={'frequency': 'weekdays', 'weekdays_mask': 1 | 4 | 16})
         for n in (1, 6, 8):  # missed Monday day(4)
-            services.log_checkin(user, t, day(n))
+            log(user, t, day(n))
         assert selectors.compute_streak(t, today=day(9)).current == 2
 
     def test_skipped_days_neither_break_nor_extend(self, user, habit):
-        services.log_checkin(user, habit, day(0))
-        services.skip_checkin(user, habit, day(1))
-        services.log_checkin(user, habit, day(2))
+        log(user, habit, day(0))
+        skip(user, habit, day(1))
+        log(user, habit, day(2))
         stats = selectors.compute_streak(habit, today=day(2))
         assert (stats.current, stats.longest) == (2, 2)
 
     def test_longest_is_rebuilt_from_history(self, user, habit):
         """Rule 5: deleting a check-in lowers `longest` on the next rebuild."""
         for n in range(4):
-            services.log_checkin(user, habit, day(n))
+            log(user, habit, day(n))
         assert selectors.compute_streak(habit, today=day(3)).longest == 4
         CheckIn.objects.filter(date=day(1)).delete()
         assert selectors.compute_streak(habit, today=day(3)).longest == 2
@@ -367,7 +440,7 @@ class TestStreak:
         today = day(40)
         # Window: day(11)..day(40). Done on even days 12..40 (today included).
         for n in range(12, 41, 2):
-            services.log_checkin(user, habit, day(n))
+            log(user, habit, day(n))
         services.create_pause(user, start_date=day(12), end_date=day(21))  # 10 days are neutral
         # Counted: day(11) + day(22)..day(40) = 20 days, of which 10 done.
         assert selectors.compute_streak(habit, today=today).completion_rate_30d == Decimal('50.00')
@@ -375,7 +448,7 @@ class TestStreak:
     def test_per_period_frequencies_report_zero_for_now(self, user):
         t = services.create_trackable(user, name='Run', start_date=D,
                                       schedule={'frequency': 'times_week', 'times_per_period': 3})
-        services.log_checkin(user, t, day(0))
+        log(user, t, day(0))
         assert selectors.compute_streak(t, today=day(0)).current == 0
 
 
@@ -385,7 +458,7 @@ class TestRecomputeTask:
 
         freeze_utc(2026, 1, 3, 12, 0)  # day(2)
         for n in range(3):
-            services.log_checkin(user, habit, day(n))
+            log(user, habit, day(n))
         recompute_streak.delay(str(habit.pk))
         cache = StreakCache.objects.get(trackable=habit)
         assert (cache.current, cache.longest, cache.computed_for_date) == (3, 3, day(2))

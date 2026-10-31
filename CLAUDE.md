@@ -85,6 +85,10 @@ The check-in belongs to Tuesday.
 `CheckIn` is unique on `(trackable, date)`. Repeated logs on the same day
 accumulate into `value`; they never create extra rows.
 
+Backfill: check-ins are accepted for today and yesterday only (user's local
+date). Older and future dates are refused. This applies to every entry point,
+including AI agents.
+
 ### 4. Pauses never change history
 Vacation, sickness, travel = a `Pause` period (`trackable=NULL` pauses everything,
 `end_date=NULL` means open-ended). Streaks and completion rates skip paused days;

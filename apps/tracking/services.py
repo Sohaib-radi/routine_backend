@@ -84,9 +84,17 @@ def _status_for(trackable: Trackable, value) -> str:
     return CheckIn.Status.DONE if (value or 0) >= trackable.target_value else CheckIn.Status.PARTIAL
 
 
+# Backfill window (CLAUDE.md rule 3): today and yesterday, in the user's local date.
+BACKFILL_DAYS = 1
+
+
 def _check_date(user, trackable, d: date) -> None:
-    if d > user_today(user):
+    """Check-ins are accepted for today and yesterday only (every entry point, AI included)."""
+    today = user_today(user)
+    if d > today:
         raise ValidationError({'date': 'Cannot record a future date.'})
+    if d < today - timedelta(days=BACKFILL_DAYS):
+        raise ValidationError({'date': 'Check-ins can only be recorded for today or yesterday.'})
     if d < trackable.start_date or (trackable.end_date and d > trackable.end_date):
         raise ValidationError({'date': 'Outside the trackable\'s active dates.'})
 
@@ -100,6 +108,7 @@ def log_checkin(user, trackable, d: date, value=None, source=CheckIn.Source.MANU
     whatever the source. The row keeps the source of the first log. Used by the UI,
     the voice/photo agents (after confirmation) and the domain apps alike.
     Logging a skipped day turns it into a real check-in.
+    Only today and yesterday (user's local date) are accepted.
     """
     # Lock the trackable: concurrent logs for it serialise here, so the
     # get-then-create below cannot race into the unique constraint.
