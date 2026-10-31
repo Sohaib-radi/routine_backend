@@ -184,6 +184,9 @@ class Food(TimeStampedModel):
         USDA = 'usda', 'USDA'
         OFF = 'off', 'Open Food Facts'
         CUSTOM = 'custom', 'Custom'
+        AI = 'ai', 'AI estimate'  # a user's private food created from an unmatched AI item
+
+    USER_SOURCES = (Source.CUSTOM, Source.AI)  # sources allowed on a user's private food
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name='custom_foods',
@@ -216,7 +219,7 @@ class Food(TimeStampedModel):
         constraints = [
             models.UniqueConstraint(fields=['source', 'key'], condition=models.Q(user__isnull=True),
                                     name='uniq_global_food_key'),
-            models.CheckConstraint(condition=models.Q(user__isnull=True) | models.Q(source='custom'),
+            models.CheckConstraint(condition=models.Q(user__isnull=True) | models.Q(source__in=['custom', 'ai']),
                                    name='custom_food_source'),
         ]
         indexes = [

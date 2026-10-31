@@ -138,3 +138,8 @@ def test_seeded_foods_are_searchable(user):
     assert [f.name_en for f in selectors.search_foods(user, 'فلافل')] == ['Falafel']
     koshari = Food.objects.get(key='test-koshari')
     assert koshari.portions.get(unit='plate').grams == Decimal(350)
+
+
+def test_import_refuses_the_ai_source(tmp_path):
+    with pytest.raises(CommandError, match='only for users'):
+        call_command('import_foods', write_csv(tmp_path / 'f.csv', [{**KOSHARI, 'source': 'ai'}]))

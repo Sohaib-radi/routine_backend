@@ -155,6 +155,38 @@ def search_foods(user, query: str, limit: int = SEARCH_DEFAULT_LIMIT) -> list[Fo
     )
 
 
+# Matching a name extracted by the AI (looser than search: the AI may phrase a food
+# differently, e.g. "فول مدمس بالزيت" for "فول مدمس").
+MATCH_MIN_TOKEN_LENGTH = 3      # words shorter than this are not used to find candidates
+MATCH_MIN_SIMILARITY = 0.3      # trigram word similarity (0-1) to accept a fuzzy candidate
+MATCH_CANDIDATES = 4            # best match + 3 alternatives
+
+
+def match_foods(user, name: str, limit: int = MATCH_CANDIDATES) -> list[Food]:
+    """
+    Foods matching a name extracted by the AI, best first: the normal search; if it
+    finds nothing, foods containing any word of the name (trigram index), ranked by
+    trigram word similarity and kept above MATCH_MIN_SIMILARITY.
+    """
+    found = search_foods(user, name, limit)
+    if found:
+        return found
+    q = normalize(name)
+    words = [w for w in q.split() if len(w) >= MATCH_MIN_TOKEN_LENGTH]
+    if not words:
+        return []
+    any_word = Q()
+    for word in words:
+        any_word |= Q(search_text__contains=word)
+    return list(
+        foods_for(user).filter(any_word)
+        .annotate(similarity=TrigramWordSimilarity(q, 'search_text'))
+        .filter(similarity__gte=MATCH_MIN_SIMILARITY)
+        .order_by('-similarity', 'name_en', 'pk')
+        .prefetch_related('portions')[:limit]
+    )
+
+
 # ----------------------------- meals & nutrition --------------------------- #
 @dataclass(frozen=True)
 class Nutrients:

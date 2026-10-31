@@ -151,10 +151,16 @@ def _set_portions(food: Food, portions: list[dict]) -> None:
 
 
 @transaction.atomic
-def create_custom_food(user, *, portions: list[dict] | None = None, **fields) -> Food:
-    """A private food, visible only to `user`. Nutrition is per 100 g."""
+def create_custom_food(user, *, portions: list[dict] | None = None, source: str = Food.Source.CUSTOM,
+                       **fields) -> Food:
+    """
+    A private food, visible only to `user`. Nutrition is per 100 g. `source` is
+    `custom` (entered by the user) or `ai` (an unmatched AI item the user confirmed).
+    """
     _check_fields(fields)
-    food = Food(user=user, source=Food.Source.CUSTOM, is_verified=False, **fields)
+    if source not in Food.USER_SOURCES:
+        raise ValidationError({'source': f'A private food cannot have source “{source}”.'})
+    food = Food(user=user, source=source, is_verified=False, **fields)
     food.full_clean()
     food.save()
     _set_portions(food, portions or [])
@@ -204,6 +210,8 @@ def _parse_row(row: dict) -> tuple[dict, list[dict]]:
     get = lambda name: (row.get(name) or '').strip()  # noqa: E731
     fields = {name: get(name) for name in ('key', 'source', 'category', 'name_ar', 'name_en', 'name_fr')}
     fields['category'] = fields['category'] or Food.Category.OTHER
+    if fields['source'] == Food.Source.AI:
+        raise ValidationError({'source': '“ai” is only for users\' private foods.'})
     fields['aliases'] = [a.strip() for a in get('aliases').split('|') if a.strip()]
     for name in ('kcal', 'protein_g', 'carbs_g', 'fat_g'):
         try:

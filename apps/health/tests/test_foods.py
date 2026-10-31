@@ -180,3 +180,61 @@ def test_delete_custom_food(user):
     f = services.create_custom_food(user, **FIELDS)
     services.delete_custom_food(user, f)
     assert not Food.objects.exists()
+
+
+# ----------------------------- AI source ----------------------------------- #
+def test_create_ai_food(user):
+    f = services.create_custom_food(user, source='ai', **FIELDS)
+    assert (f.source, f.is_verified, f.user) == ('ai', False, user)
+    assert [x.pk for x in selectors.search_foods(user, 'كيكه')] == [f.pk]  # found by its owner
+
+
+def test_private_foods_cannot_use_a_dataset_source(user):
+    with pytest.raises(ValidationError):
+        services.create_custom_food(user, source='nni', **FIELDS)
+
+
+def test_ai_foods_can_be_edited_and_deleted_by_their_owner(user):
+    f = services.create_custom_food(user, source='ai', **FIELDS)
+    assert services.update_custom_food(user, f, kcal=Decimal(300)).kcal == 300
+    services.delete_custom_food(user, f)
+    assert not Food.objects.exists()
+
+
+# ----------------------------- match_foods (AI names) ---------------------- #
+@pytest.fixture
+def menu():
+    return {
+        'ful': food('ful', 'فول مدمس', 'Ful medames', 'Foul medames', ['فول']),
+        'peanuts': food('peanuts', 'فول سوداني', 'Roasted peanuts', 'Cacahuètes'),
+        'tameya': food('tameya', 'طعمية', 'Falafel', 'Falafel', ['فلافل']),
+        'tea': food('tea', 'شاي بسكر', 'Tea with sugar', 'Thé au sucre', ['شاي']),
+    }
+
+
+def test_match_uses_the_normal_search_first(user, menu):
+    assert keys(selectors.match_foods(user, 'طعميه')) == ['tameya']
+
+
+def test_match_finds_a_food_phrased_differently(user, menu):
+    found = keys(selectors.match_foods(user, 'فول مدمس بالزيت'))
+    assert found[0] == 'ful'
+
+
+def test_match_returns_best_plus_alternatives(user, menu):
+    found = keys(selectors.match_foods(user, 'فول'))
+    assert found[0] == 'ful' and 'peanuts' in found and len(found) <= 4
+
+
+def test_match_in_english_with_extra_words(user, menu):
+    assert keys(selectors.match_foods(user, 'a cup of tea with sugar'))[0] == 'tea'
+
+
+def test_no_match_for_unknown_food(user, menu):
+    assert selectors.match_foods(user, 'sushi platter') == []
+    assert selectors.match_foods(user, 'ab') == []
+
+
+def test_match_includes_own_private_foods_only(user, make_user, menu):
+    services.create_custom_food(make_user(), source='ai', name_ar='كيكة', kcal=1, protein_g=0, carbs_g=0, fat_g=0)
+    assert selectors.match_foods(user, 'كيكة بالشوكولاتة') == []
