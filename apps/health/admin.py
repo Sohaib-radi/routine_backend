@@ -1,12 +1,13 @@
 """
-Admin for health (Unfold). Read-only: plans are history, and every write goes
-through health.services (which keeps the metric trackables in sync).
+Admin for health (Unfold). Plans, weights and metric links are read-only: plans are
+history, and every write goes through health.services (which keeps the metric
+trackables in sync). Staff edit the global foods; users' custom foods are read-only.
 """
 
 from django.contrib import admin
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 
-from .models import HealthMetric, HealthPlan, WeightEntry
+from .models import Food, FoodPortion, HealthMetric, HealthPlan, WeightEntry
 
 
 class ReadOnlyAdmin(ModelAdmin):
@@ -41,3 +42,58 @@ class HealthMetricAdmin(ReadOnlyAdmin):
     list_filter = ['metric']
     list_select_related = ['user', 'trackable']
     search_fields = ['user__email']
+
+
+class FoodPortionInline(TabularInline):
+    model = FoodPortion
+    extra = 0
+    fields = ['unit', 'grams']
+
+    def has_add_permission(self, request, obj=None):
+        return obj is None or obj.user_id is None
+
+    def has_change_permission(self, request, obj=None):
+        return obj is None or obj.user_id is None
+
+    def has_delete_permission(self, request, obj=None):
+        return obj is None or obj.user_id is None
+
+
+class CustomFoodFilter(admin.SimpleListFilter):
+    title = 'owner'
+    parameter_name = 'owner'
+
+    def lookups(self, request, model_admin):
+        return [('global', 'Global'), ('custom', "Users' custom foods")]
+
+    def queryset(self, request, queryset):
+        if self.value() == 'global':
+            return queryset.filter(user__isnull=True)
+        if self.value() == 'custom':
+            return queryset.filter(user__isnull=False)
+        return queryset
+
+
+@admin.register(Food)
+class FoodAdmin(ModelAdmin):
+    """Global foods are created here (owner empty); custom foods belong to users and are read-only."""
+
+    list_display = ['__str__', 'name_ar', 'category', 'kcal', 'protein_g', 'carbs_g', 'fat_g', 'source',
+                    'is_verified', 'is_active', 'user']
+    list_filter = [CustomFoodFilter, 'category', 'source', 'is_verified', 'is_active']
+    list_select_related = ['user']
+    search_fields = ['name_ar', 'name_en', 'name_fr', 'key']
+    fields = ['name_ar', 'name_en', 'name_fr', 'aliases', 'category', 'kcal', 'protein_g', 'carbs_g', 'fat_g',
+              'source', 'key', 'is_verified', 'is_active', 'user', 'created_at', 'updated_at']
+    readonly_fields = ['user', 'created_at', 'updated_at']
+    inlines = [FoodPortionInline]
+
+    def has_change_permission(self, request, obj=None):
+        if obj is not None and obj.user_id is not None:
+            return False
+        return super().has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if obj is not None and obj.user_id is not None:
+            return False
+        return super().has_delete_permission(request, obj)

@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',  # pg_trgm search (health foods)
     # Third party
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
