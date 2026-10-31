@@ -3,13 +3,15 @@ Health API serializers. They check shapes and types; the accepted ranges and eve
 rule live in health.calculations / health.services.
 """
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.tracking.api.serializers import OwnedPrimaryKeyField
 from apps.tracking.dates import user_today
 
 from .. import selectors
 from ..calculations import ActivityLevel, Goal, Mode, PlanInputs, Sex
-from ..models import HealthPlan, WeightEntry
+from ..models import Food, FoodPortion, HealthPlan, Meal, MealItem, PortionUnit, WeightEntry
 
 
 class PlanInputSerializer(serializers.Serializer):
@@ -92,3 +94,136 @@ class WeightEntrySerializer(serializers.ModelSerializer):
             'date': {'required': False, 'help_text': "Last 30 days, no future dates. Defaults to the user's today."},
         }
         validators = []  # (user, date) uniqueness: a second log that day replaces the weight
+
+
+# ----------------------------- foods --------------------------------------- #
+class UnitLabelsSerializer(serializers.Serializer):
+    ar = serializers.CharField()
+    en = serializers.CharField()
+    fr = serializers.CharField()
+
+
+class FoodPortionSerializer(serializers.ModelSerializer):
+    labels = UnitLabelsSerializer(read_only=True, help_text='The unit name in each language.')
+
+    class Meta:
+        model = FoodPortion
+        fields = ['unit', 'grams', 'labels']
+
+
+class FoodSerializer(serializers.ModelSerializer):
+    """A food as the apps show it. Nutrition is per 100 g."""
+
+    portions = FoodPortionSerializer(many=True, read_only=True)
+    is_custom = serializers.SerializerMethodField(help_text="True for the user's own custom food.")
+
+    class Meta:
+        model = Food
+        fields = ['id', 'name_ar', 'name_en', 'name_fr', 'aliases', 'category', 'kcal', 'protein_g', 'carbs_g',
+                  'fat_g', 'source', 'is_verified', 'is_custom', 'portions', 'created_at', 'updated_at']
+        read_only_fields = fields
+
+    def get_is_custom(self, food) -> bool:
+        return food.user_id is not None
+
+
+class PortionInputSerializer(serializers.Serializer):
+    unit = serializers.ChoiceField(choices=PortionUnit.choices)
+    grams = serializers.DecimalField(max_digits=6, decimal_places=1)
+
+
+class CustomFoodInputSerializer(serializers.Serializer):
+    """Create (POST) or edit (PATCH) a custom food. Ranges are checked by health.services."""
+
+    name_ar = serializers.CharField(max_length=120, required=False, allow_blank=True)
+    name_en = serializers.CharField(max_length=120, required=False, allow_blank=True)
+    name_fr = serializers.CharField(max_length=120, required=False, allow_blank=True)
+    aliases = serializers.ListField(child=serializers.CharField(max_length=120), required=False, max_length=20)
+    category = serializers.ChoiceField(choices=Food.Category.choices, required=False)
+    kcal = serializers.DecimalField(max_digits=5, decimal_places=1, help_text='Per 100 g.')
+    protein_g = serializers.DecimalField(max_digits=5, decimal_places=1, help_text='Per 100 g.')
+    carbs_g = serializers.DecimalField(max_digits=5, decimal_places=1, help_text='Per 100 g.')
+    fat_g = serializers.DecimalField(max_digits=5, decimal_places=1, help_text='Per 100 g.')
+    portions = PortionInputSerializer(many=True, required=False, help_text='PATCH: replaces all portions.')
+
+
+class FoodSearchQuerySerializer(serializers.Serializer):
+    q = serializers.CharField(help_text='At least 2 characters. Any language; Arabic spelling is normalized.')
+    limit = serializers.IntegerField(required=False, min_value=1, max_value=selectors.SEARCH_MAX_LIMIT,
+                                     default=selectors.SEARCH_DEFAULT_LIMIT)
+
+
+# ----------------------------- meals --------------------------------------- #
+class NutrientsSerializer(serializers.Serializer):
+    kcal = serializers.DecimalField(max_digits=8, decimal_places=1)
+    protein_g = serializers.DecimalField(max_digits=7, decimal_places=1)
+    carbs_g = serializers.DecimalField(max_digits=7, decimal_places=1)
+    fat_g = serializers.DecimalField(max_digits=7, decimal_places=1)
+
+
+class MealItemSerializer(serializers.ModelSerializer):
+    """An item as logged. Names and nutrition are the snapshot taken when it was logged."""
+
+    food_id = serializers.UUIDField(read_only=True, allow_null=True, help_text='Null if the food was deleted.')
+    portion = serializers.CharField(source='portion_unit', read_only=True, help_text='Empty when grams were entered.')
+
+    class Meta:
+        model = MealItem
+        fields = ['id', 'food_id', 'name_ar', 'name_en', 'name_fr', 'portion', 'quantity', 'grams', 'kcal',
+                  'protein_g', 'carbs_g', 'fat_g', 'created_at', 'updated_at']
+        read_only_fields = fields
+
+
+class MealSerializer(serializers.ModelSerializer):
+    items = MealItemSerializer(many=True, read_only=True)
+    totals = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Meal
+        fields = ['id', 'date', 'meal_type', 'note', 'source', 'items', 'totals', 'created_at', 'updated_at']
+        read_only_fields = fields
+
+    @extend_schema_field(NutrientsSerializer)
+    def get_totals(self, meal):
+        return NutrientsSerializer(selectors.meal_totals(meal)).data
+
+
+class MealItemInputSerializer(serializers.Serializer):
+    """Either a portion (with an optional quantity, default 1) or grams."""
+
+    food_id = OwnedPrimaryKeyField(selectors.foods_for, source='food')
+    portion = serializers.ChoiceField(choices=PortionUnit.choices, required=False)
+    quantity = serializers.DecimalField(max_digits=6, decimal_places=2, required=False,
+                                        help_text='Number of portions (0.25-50). Default 1.')
+    grams = serializers.DecimalField(max_digits=7, decimal_places=2, required=False, help_text='1-5000 g.')
+
+
+class MealItemUpdateSerializer(serializers.Serializer):
+    food_id = OwnedPrimaryKeyField(selectors.foods_for, source='food', required=False)
+    portion = serializers.ChoiceField(choices=PortionUnit.choices, required=False, allow_null=True)
+    quantity = serializers.DecimalField(max_digits=6, decimal_places=2, required=False, allow_null=True)
+    grams = serializers.DecimalField(max_digits=7, decimal_places=2, required=False, allow_null=True)
+
+
+class MealInputSerializer(serializers.Serializer):
+    date = serializers.DateField(required=False, help_text="Today or yesterday. Defaults to the user's today.")
+    meal_type = serializers.ChoiceField(choices=Meal.Type.choices)
+    note = serializers.CharField(max_length=500, required=False, allow_blank=True, default='')
+    items = MealItemInputSerializer(many=True, min_length=1)
+
+
+class MealUpdateSerializer(serializers.Serializer):
+    date = serializers.DateField(required=False, help_text='Today or yesterday.')
+    meal_type = serializers.ChoiceField(choices=Meal.Type.choices, required=False)
+    note = serializers.CharField(max_length=500, required=False, allow_blank=True)
+
+
+class DateQuerySerializer(serializers.Serializer):
+    date = serializers.DateField(required=False, help_text="Defaults to the user's today.")
+
+
+class DailyNutritionSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    totals = NutrientsSerializer(help_text='From the meals of that day.')
+    targets = NutrientsSerializer(allow_null=True, help_text='From the plan that applied that day. Null: no plan.')
+    remaining = NutrientsSerializer(allow_null=True, help_text='targets - totals; negative when over.')

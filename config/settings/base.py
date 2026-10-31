@@ -157,6 +157,7 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_PATH_PREFIX': r'/api/v1',
     'ENUM_NAME_OVERRIDES': {
         'PlanModeEnum': 'apps.health.calculations.Mode',  # used by both mode and water_mode
+        'PortionUnitEnum': 'apps.health.models.PortionUnit',  # unit and portion fields
     },
 }
 
