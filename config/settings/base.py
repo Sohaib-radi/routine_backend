@@ -34,10 +34,11 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
-    # Local (dependency direction: tracking -> accounts -> profiles)
+    # Local (dependency direction: health -> tracking -> accounts -> profiles)
     'apps.profiles',
     'apps.accounts',
     'apps.tracking',
+    'apps.health',
 ]
 
 MIDDLEWARE = [
