@@ -139,6 +139,7 @@ class SidebarTests(TestCase):
             (['Users', 'Profiles', 'Roles'], 'Accounts'),
             (['Trackables', 'Check-ins', 'Pauses', 'Streaks'], 'Tracking'),
             (['Plans', 'Weight', 'Foods', 'Meals', 'Metric trackables'], 'Health'),
+            (['Feature configuration', 'Prices', 'Usage', 'Daily usage', 'Meal drafts'], 'AI'),
             (['Outstanding tokens', 'Blacklisted tokens'], 'Security'),
         ])
 
@@ -149,6 +150,8 @@ class SidebarTests(TestCase):
             '/admin/tracking/streakcache/',
             '/admin/health/healthplan/', '/admin/health/weightentry/', '/admin/health/food/',
             '/admin/health/meal/', '/admin/health/healthmetric/',
+            '/admin/ai/aifeatureconfig/', '/admin/ai/providerprice/', '/admin/ai/aiusage/',
+            '/admin/ai/aiusage/daily/', '/admin/ai/mealdraft/',
             '/admin/token_blacklist/outstandingtoken/', '/admin/token_blacklist/blacklistedtoken/',
         }
         seen = set()

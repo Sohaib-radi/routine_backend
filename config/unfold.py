@@ -135,6 +135,18 @@ UNFOLD = {
                 ],
             },
             {
+                'title': _('AI'),
+                'separator': True,
+                'items': [
+                    _nav_item(_('Feature configuration'), 'tune', 'admin:ai_aifeatureconfig_changelist',
+                              'ai.view_aifeatureconfig'),
+                    _nav_item(_('Prices'), 'payments', 'admin:ai_providerprice_changelist', 'ai.view_providerprice'),
+                    _nav_item(_('Usage'), 'receipt_long', 'admin:ai_aiusage_changelist', 'ai.view_aiusage'),
+                    _nav_item(_('Daily usage'), 'bar_chart', 'admin:ai_aiusage_daily', 'ai.view_aiusage'),
+                    _nav_item(_('Meal drafts'), 'edit_note', 'admin:ai_mealdraft_changelist', 'ai.view_mealdraft'),
+                ],
+            },
+            {
                 'title': _('Security'),
                 'separator': True,
                 'items': [

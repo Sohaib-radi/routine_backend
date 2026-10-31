@@ -1,0 +1,47 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="flex flex-col gap-6">
+  <p>
+    {% blocktranslate with days=days %}Last {{ days }} days (days in UTC).{% endblocktranslate %}
+    <strong>{% translate "Calls" %}:</strong> {{ total.calls }} ·
+    <strong>{% translate "Failures" %}:</strong> {{ total.failures }} ·
+    <strong>{% translate "Estimated cost" %}:</strong> ${{ total.cost_usd|default_if_none:"0" }}
+  </p>
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse text-sm">
+      <thead>
+        <tr class="text-left">
+          <th class="p-2">{% translate "Day" %}</th>
+          <th class="p-2">{% translate "Feature" %}</th>
+          <th class="p-2">{% translate "Provider" %}</th>
+          <th class="p-2">{% translate "Model" %}</th>
+          <th class="p-2 text-right">{% translate "Calls" %}</th>
+          <th class="p-2 text-right">{% translate "Failures" %}</th>
+          <th class="p-2 text-right">{% translate "Input tokens" %}</th>
+          <th class="p-2 text-right">{% translate "Output tokens" %}</th>
+          <th class="p-2 text-right">{% translate "Cost (USD)" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr class="border-t">
+            <td class="p-2">{{ row.day|date:"Y-m-d" }}</td>
+            <td class="p-2">{{ row.feature }}</td>
+            <td class="p-2">{{ row.provider }}</td>
+            <td class="p-2">{{ row.model }}</td>
+            <td class="p-2 text-right">{{ row.calls }}</td>
+            <td class="p-2 text-right">{{ row.failures }}</td>
+            <td class="p-2 text-right">{{ row.input_tokens }}</td>
+            <td class="p-2 text-right">{{ row.output_tokens }}</td>
+            <td class="p-2 text-right">{{ row.cost_usd|default_if_none:"-" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td class="p-2" colspan="9">{% translate "No AI usage yet." %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
