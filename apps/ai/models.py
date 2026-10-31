@@ -14,6 +14,8 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from apps.health.models import Meal
+
 
 class Feature(models.TextChoices):
     MEAL_TEXT = 'meal_text', 'Meal from text'
@@ -94,6 +96,7 @@ class AIUsage(models.Model):
     latency_ms = models.PositiveIntegerField(default=0)
     success = models.BooleanField()
     error_code = models.CharField(max_length=40, blank=True)
+    draft = models.ForeignKey('MealDraft', on_delete=models.SET_NULL, null=True, blank=True, related_name='usage')
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
@@ -104,3 +107,58 @@ class AIUsage(models.Model):
 
     def __str__(self):
         return f'{self.feature} {self.model} {"ok" if self.success else self.error_code}'
+
+
+class MealDraft(models.Model):
+    """
+    A meal proposed by the AI from the user's text. Nothing is written to health
+    until the user confirms; confirming calls health.services.log_meal (source=agent).
+
+    pending -> processing -> ready | failed;  ready -> confirmed;
+    anything not confirmed -> expired after AI_DRAFT_TTL_HOURS.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        PROCESSING = 'processing', 'Processing'
+        READY = 'ready', 'Ready'
+        FAILED = 'failed', 'Failed'
+        CONFIRMED = 'confirmed', 'Confirmed'
+        EXPIRED = 'expired', 'Expired'
+
+    class MealTypeSource(models.TextChoices):
+        USER = 'user', 'Chosen by the user'
+        AI = 'ai', 'Said in the text'
+        TIME = 'time', "Guessed from the user's local time"
+
+    OPEN = (Status.PENDING, Status.PROCESSING, Status.READY, Status.FAILED)  # can still expire
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='meal_drafts')
+    text = models.CharField(max_length=500)
+    date = models.DateField()  # user's local date
+    meal_type = models.CharField(max_length=10, choices=Meal.Type.choices)
+    meal_type_source = models.CharField(max_length=5, choices=MealTypeSource.choices)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    proposal = models.JSONField(default=dict, blank=True, help_text='{"items": [...]} (see docs/ai.md).')
+    error_code = models.CharField(max_length=40, blank=True)
+    error_message = models.CharField(max_length=255, blank=True)
+    prompt_version = models.CharField(max_length=40, blank=True)
+    provider = models.CharField(max_length=20, blank=True)
+    model = models.CharField(max_length=100, blank=True)
+    meal = models.ForeignKey(Meal, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    expires_at = models.DateTimeField()
+    analyzed_at = models.DateTimeField(null=True, blank=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'created_at']),   # daily limit
+            models.Index(fields=['status', 'updated_at']),  # stuck / expiry sweeps
+        ]
+
+    def __str__(self):
+        return f'{self.user} draft {self.status}: {self.text[:40]}'

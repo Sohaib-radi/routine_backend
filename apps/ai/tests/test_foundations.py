@@ -89,8 +89,17 @@ def test_unknown_price_gives_no_cost():
     assert config.estimate_cost('anthropic', 'unpriced-model', 100, 100) is None
 
 
-def test_seeded_prices_exist():
-    assert ProviderPrice.objects.filter(provider='anthropic', model='claude-haiku-5-5').exists()
+def test_price_seed_migration():
+    """The data migration's seed (run here directly: transactional tests flush seeded rows)."""
+    import importlib
+
+    from django.apps import apps as django_apps
+
+    ProviderPrice.objects.all().delete()
+    importlib.import_module('apps.ai.migrations.0002_seed_provider_prices').seed(django_apps, None)
+    haiku = ProviderPrice.objects.get(provider='anthropic', model='claude-haiku-5-5')
+    assert (haiku.input_usd_per_mtok, haiku.output_usd_per_mtok) == (Decimal('0.10'), Decimal('0.50'))
+    assert ProviderPrice.objects.filter(provider='anthropic').count() == 3
 
 
 def test_key_status_never_exposes_the_key(monkeypatch):
@@ -245,9 +254,10 @@ def test_usage_recorded_on_success(user):
     ProviderPrice.objects.update_or_create(provider='fake', model='claude-haiku-5-5', defaults={
         'input_usd_per_mtok': 1, 'output_usd_per_mtok': 2})
     fake.script(make_extraction())
-    services.call_provider(user=user, cfg=config.feature_config('meal_text'), request=request(),
-                           prompt_version='v-test')
+    _, row = services.call_provider(user=user, cfg=config.feature_config('meal_text'), request=request(),
+                                    prompt_version='v-test')
     u = AIUsage.objects.get()
+    assert u == row
     assert (u.user, u.feature, u.provider, u.model, u.prompt_version, u.success, u.error_code) == (
         user, 'meal_text', 'fake', 'claude-haiku-5-5', 'v-test', True, '')
     assert (u.input_tokens, u.output_tokens, u.cost_usd) == (120, 60, Decimal('0.000240'))

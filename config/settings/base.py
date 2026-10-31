@@ -192,6 +192,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'apps.tracking.tasks.recompute_streaks_after_local_midnight',
         'schedule': crontab(minute=1),  # every hour, just after the full hour
     },
+    'sweep-ai-meal-drafts': {
+        'task': 'apps.ai.tasks.sweep_meal_drafts',
+        'schedule': crontab(minute='*/5'),  # stuck analyses fail, old drafts expire
+    },
 }
 
 
