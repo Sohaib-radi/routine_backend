@@ -52,6 +52,44 @@ def bmi(weight_kg: Decimal, height_cm: Decimal) -> Decimal:
     return (Decimal(weight_kg) / (meters * meters)).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
 
 
+# BMI categories (WHO): upper bounds, exclusive.
+BMI_CATEGORIES = (
+    (Decimal('18.5'), 'underweight'),
+    (Decimal(25), 'normal'),
+    (Decimal(30), 'overweight'),
+)
+BMI_TOP_CATEGORY = 'obese'  # >= 30
+NO_WEIGHT, NO_HEIGHT = 'no_weight', 'no_height'
+
+
+def bmi_category(value: Decimal) -> str:
+    for upper, name in BMI_CATEGORIES:
+        if value < upper:
+            return name
+    return BMI_TOP_CATEGORY
+
+
+@dataclass(frozen=True)
+class Bmi:
+    value: Decimal | None
+    category: str | None
+    reason: str | None  # why there is no value: NO_WEIGHT or NO_HEIGHT
+
+
+def bmi_on(user, d: date, plan: HealthPlan | None) -> Bmi:
+    """
+    BMI on local date `d`: the latest weight on or before `d`, and the height of the
+    plan that applied that day (pass plan_for(user, d)). One query.
+    """
+    weight = latest_weight(user, on=d)
+    if weight is None:
+        return Bmi(None, None, NO_WEIGHT)
+    if plan is None:
+        return Bmi(None, None, NO_HEIGHT)
+    value = bmi(weight.weight_kg, plan.height_cm)
+    return Bmi(value, bmi_category(value), None)
+
+
 def current_bmi(user, plan: HealthPlan | None = None) -> Decimal | None:
     """BMI from the latest weight and the current plan's height (None if either is missing)."""
     plan = plan or current_plan(user)

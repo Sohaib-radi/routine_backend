@@ -211,3 +211,48 @@ def test_latest_weight_and_bmi(user):
     assert selectors.current_bmi(user) == Decimal('25.2')  # 80 / 1.78² = 25.249
     services.log_weight(user, TODAY, 75)  # the latest weight wins
     assert selectors.current_bmi(user) == Decimal('23.7')  # 75 / 3.1684 = 23.67
+
+
+# ----------------------------- BMI categories ------------------------------ #
+@pytest.mark.parametrize(('value', 'category'), [
+    (Decimal('15.0'), 'underweight'),
+    (Decimal('18.4'), 'underweight'),
+    (Decimal('18.5'), 'normal'),
+    (Decimal('24.9'), 'normal'),
+    (Decimal('25.0'), 'overweight'),
+    (Decimal('29.9'), 'overweight'),
+    (Decimal('30.0'), 'obese'),
+    (Decimal('41.2'), 'obese'),
+])
+def test_bmi_categories(value, category):
+    assert selectors.bmi_category(value) == category
+
+
+def test_bmi_on_a_date(user):
+    services.confirm_plan(user, REFERENCE)  # 80 kg, 178 cm
+    b = selectors.bmi_on(user, TODAY, selectors.plan_for(user, TODAY))
+    assert (b.value, b.category, b.reason) == (Decimal('25.2'), 'overweight', None)
+
+
+def test_bmi_uses_the_latest_weight_on_or_before_the_date(user):
+    services.confirm_plan(user, REFERENCE)
+    services.log_weight(user, TODAY - timedelta(days=5), 70)
+    plan = selectors.plan_for(user, TODAY)
+    assert selectors.bmi_on(user, TODAY - timedelta(days=3), plan).value == Decimal('22.1')  # 70 / 3.1684
+    assert selectors.bmi_on(user, TODAY, plan).value == Decimal('25.2')
+
+
+def test_bmi_without_weight(user):
+    b = selectors.bmi_on(user, TODAY, None)
+    assert (b.value, b.category, b.reason) == (None, None, 'no_weight')
+
+
+def test_bmi_without_height(user):
+    services.log_weight(user, TODAY, 80)
+    b = selectors.bmi_on(user, TODAY, None)
+    assert (b.value, b.category, b.reason) == (None, None, 'no_height')
+
+
+def test_bmi_ignores_other_users_weights(user, make_user):
+    services.confirm_plan(make_user(), REFERENCE)
+    assert selectors.bmi_on(user, TODAY, None).reason == 'no_weight'

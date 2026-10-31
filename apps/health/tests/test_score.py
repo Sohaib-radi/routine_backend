@@ -87,7 +87,7 @@ def test_total_rounds_half_up():
     assert score(eaten=2000, water=2000, activity=30).total == 50
     # 100 + 38 + 0 + 0 + 0 = 138 / 5 = 27.6 -> 28
     assert score(eaten=2000, water=1500).total == 28
-    # 100 + 50 + 0 + 0 + 2.5... use steps 200 (3 pts): 100 + 50 + 0 + 3 + 0 = 153 / 5 = 30.6 -> 31
+    # steps 200 / 8000 = 2.5% -> 3 points: 100 + 50 + 0 + 3 + 0 = 153 / 5 = 30.6 -> 31
     assert score(eaten=2000, water=2000, steps=200).total == 31
 
 
