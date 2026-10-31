@@ -1,0 +1,23 @@
+key,source,category,name_ar,name_en,name_fr,aliases,kcal,protein_g,carbs_g,fat_g,portions,is_verified
+test-koshari,custom,dish,كشري,Koshari,Koshari,كشرى|kushari,150,5,27,2.5,plate:350|small_plate:250,false
+test-ful-medames,custom,dish,فول مدمس,Ful medames,Foul medames,فول|foul,110,7.5,15,2.5,plate:250|tbsp:20,false
+test-tameya,custom,dish,طعمية,Falafel,Falafel,فلافل|ta'meya|taameya,333,13.3,31.8,17.8,piece:30,false
+test-baladi-bread,custom,bread,عيش بلدي,Baladi bread,Pain baladi,خبز بلدي|عيش|aish baladi,270,9.5,55,1.2,loaf:100,false
+test-white-rice,custom,grain,أرز أبيض مطبوخ,Cooked white rice,Riz blanc cuit,رز|أرز,130,2.7,28,0.3,cup:160|plate:250,false
+test-chicken-breast,custom,protein,صدر فراخ مشوي,Grilled chicken breast,Blanc de poulet grillé,فراخ|دجاج|chicken,165,31,0,3.6,piece:150,false
+test-boiled-egg,custom,protein,بيض مسلوق,Boiled egg,Œuf dur,بيضة|بيض|egg,155,13,1.1,11,piece:50,false
+test-banana,custom,fruit,موز,Banana,Banane,,89,1.1,22.8,0.3,piece:120,false
+test-apple,custom,fruit,تفاح,Apple,Pomme,تفاحة,52,0.3,13.8,0.2,piece:180,false
+test-pepsi,custom,drink,بيبسي,Pepsi,Pepsi,كولا|cola,41,0,11,0,can:330|bottle:500,false
+test-tea-sugar,custom,drink,شاي بسكر,Tea with sugar,Thé au sucre,شاي|tea,20,0,5,0,cup:200|glass:250,false
+test-molokhia,custom,dish,ملوخية,Molokhia,Corète potagère,ملوخيه|mloukhia,60,3,6,3,bowl:250,false
+test-mahshi,custom,dish,محشي,Stuffed vegetables,Légumes farcis,محشى|mahshi,150,3,22,5.5,piece:60|plate:300,false
+test-white-cheese,custom,dairy,جبنة بيضاء,White cheese,Fromage blanc,جبنه|جبنة دمياطي|feta,264,14,4,21,slice:30|tbsp:20,false
+test-whole-milk,custom,dairy,لبن كامل الدسم,Whole milk,Lait entier,لبن|حليب|milk,61,3.2,4.8,3.3,cup:240|glass:250,false
+test-dates,custom,fruit,تمر,Dates,Dattes,بلح,282,2.5,75,0.4,piece:8|handful:40,false
+test-basbousa,custom,sweet,بسبوسة,Basbousa,Basboussa,هريسة,380,4.5,55,16,piece:80,false
+test-shawarma-sandwich,custom,dish,ساندويتش شاورما فراخ,Chicken shawarma sandwich,Sandwich shawarma poulet,شاورما|shawarma,220,13,22,9,sandwich:250,false
+test-french-fries,custom,snack,بطاطس محمرة,French fries,Frites,بطاطس|fries,312,3.4,41,15,plate:150|handful:50,false
+test-green-salad,custom,vegetable,سلطة خضراء,Green salad,Salade verte,سلطة بلدي|سلطه,25,1,4,0.5,bowl:200|plate:150,false
+test-peanuts,custom,snack,فول سوداني,Roasted peanuts,Cacahuètes grillées,سوداني|peanuts,585,24,21,50,handful:30,false
+test-lentil-soup,custom,dish,شوربة عدس,Lentil soup,Soupe de lentilles,عدس|lentils,90,5,13,2,bowl:300,false

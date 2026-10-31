@@ -3,6 +3,7 @@ Writes of the health module. Views (and later the AI confirmation flow) call the
 Trackables are created and updated through tracking.services only.
 """
 
+from dataclasses import dataclass, field
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 
@@ -18,7 +19,7 @@ from .models import Food, FoodPortion, HealthMetric, HealthPlan, WeightEntry
 
 __all__ = [
     'preview_plan', 'confirm_plan', 'log_weight',
-    'create_custom_food', 'update_custom_food', 'delete_custom_food',
+    'create_custom_food', 'update_custom_food', 'delete_custom_food', 'import_foods',
 ]
 
 MANAGED_BY = 'health'  # tracking.Trackable.managed_by of the metric trackables
@@ -183,3 +184,115 @@ def update_custom_food(user, food, *, portions: list[dict] | None = None, **fiel
 def delete_custom_food(user, food) -> None:
     """Delete one of the user's own custom foods. Past meals keep their snapshot."""
     _owned_custom_food(user, food, lock=True).delete()
+
+
+# ----------------------------- food import --------------------------------- #
+IMPORT_COLUMNS = ['key', 'source', 'category', 'name_ar', 'name_en', 'name_fr', 'aliases',
+                  'kcal', 'protein_g', 'carbs_g', 'fat_g', 'portions', 'is_verified']
+IMPORT_REQUIRED = {'key', 'source', 'kcal', 'protein_g', 'carbs_g', 'fat_g'}
+_TRUE, _FALSE = {'true', '1', 'yes', 'y'}, {'false', '0', 'no', 'n', ''}
+
+
+@dataclass
+class ImportResult:
+    created: int = 0
+    updated: int = 0
+    unchanged: int = 0
+    errors: list[str] = field(default_factory=list)
+
+
+def _parse_row(row: dict) -> tuple[dict, list[dict]]:
+    """One CSV row -> (Food fields, portions). Raises ValidationError on a malformed cell."""
+    get = lambda name: (row.get(name) or '').strip()  # noqa: E731
+    fields = {name: get(name) for name in ('key', 'source', 'category', 'name_ar', 'name_en', 'name_fr')}
+    fields['category'] = fields['category'] or Food.Category.OTHER
+    fields['aliases'] = [a.strip() for a in get('aliases').split('|') if a.strip()]
+    for name in ('kcal', 'protein_g', 'carbs_g', 'fat_g'):
+        try:
+            fields[name] = Decimal(get(name))
+        except InvalidOperation:
+            raise ValidationError({name: f'Not a number: “{get(name)}”.'}) from None
+    verified = get('is_verified').lower()
+    if verified not in _TRUE | _FALSE:
+        raise ValidationError({'is_verified': f'Use true or false, not “{verified}”.'})
+    fields['is_verified'] = verified in _TRUE
+
+    portions = []
+    for part in filter(None, (p.strip() for p in get('portions').split('|'))):
+        unit, sep, grams = part.partition(':')
+        try:
+            portions.append({'unit': unit.strip(), 'grams': Decimal(grams.strip())})
+        except InvalidOperation:
+            raise ValidationError({'portions': f'Expected unit:grams, got “{part}”.'}) from None
+        if not sep:
+            raise ValidationError({'portions': f'Expected unit:grams, got “{part}”.'})
+    return fields, portions
+
+
+def _sync_portions(food: Food, portions: list[dict]) -> bool:
+    """Make the food's portions exactly `portions` (matched by unit). Returns True if anything changed."""
+    current = {p.unit: p for p in food.portions.all()}
+    wanted = {p['unit']: p['grams'] for p in portions}
+    if len(wanted) != len(portions):
+        raise ValidationError({'portions': 'Each unit can appear only once.'})
+    changed = False
+    for unit, grams in wanted.items():
+        row = current.get(unit) or FoodPortion(food=food, unit=unit)
+        if row.pk and row.grams == grams:
+            continue
+        row.grams = grams
+        row.full_clean(exclude=['food'])
+        row.save()
+        changed = True
+    stale = [p.pk for unit, p in current.items() if unit not in wanted]
+    if stale:
+        FoodPortion.objects.filter(pk__in=stale).delete()  # past meals keep their snapshot
+        changed = True
+    return changed
+
+
+def import_foods(rows, *, dry_run: bool = False) -> ImportResult:
+    """
+    Create or update global foods from CSV rows (dicts keyed by IMPORT_COLUMNS).
+    Idempotent: foods are matched on (source, key), portions on unit; running the
+    same file twice changes nothing. Foods missing from the file are left alone,
+    and `is_active` is never touched. All or nothing: any invalid row -> nothing
+    is written and every error is reported.
+    """
+    result = ImportResult()
+    seen = set()
+    with transaction.atomic():
+        for line, row in enumerate(rows, start=2):  # line 1 is the header
+            try:
+                missing = sorted(c for c in IMPORT_REQUIRED if not (row.get(c) or '').strip())
+                if missing:
+                    raise ValidationError(f'Missing {", ".join(missing)}.')
+                fields, portions = _parse_row(row)
+                identity = (fields['source'], fields['key'])
+                if identity in seen:
+                    raise ValidationError(f'Duplicate key “{fields["key"]}” for source {fields["source"]}.')
+                seen.add(identity)
+
+                food = Food.objects.filter(user__isnull=True, source=fields['source'], key=fields['key']).first()
+                created = food is None
+                food = food or Food(source=fields['source'], key=fields['key'])
+                changed = created or any(getattr(food, n) != v for n, v in fields.items())
+                for name, value in fields.items():
+                    setattr(food, name, value)
+                food.full_clean()
+                if changed:
+                    food.save()
+                portions_changed = _sync_portions(food, portions)
+            except ValidationError as exc:
+                messages = exc.message_dict.items() if hasattr(exc, 'error_dict') else [('', exc.messages)]
+                result.errors += [f'line {line}: {f"{k}: " if k else ""}{" ".join(v)}' for k, v in messages]
+                continue
+            if created:
+                result.created += 1
+            elif changed or portions_changed:
+                result.updated += 1
+            else:
+                result.unchanged += 1
+        if result.errors or dry_run:
+            transaction.set_rollback(True)
+    return result
