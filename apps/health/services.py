@@ -14,9 +14,12 @@ from apps.tracking import services as tracking
 from apps.tracking.models import Trackable
 
 from .calculations import WEIGHT_KG_RANGE, PlanInputs, Targets, calculate_targets
-from .models import HealthMetric, HealthPlan, WeightEntry
+from .models import Food, FoodPortion, HealthMetric, HealthPlan, WeightEntry
 
-__all__ = ['preview_plan', 'confirm_plan', 'log_weight']
+__all__ = [
+    'preview_plan', 'confirm_plan', 'log_weight',
+    'create_custom_food', 'update_custom_food', 'delete_custom_food',
+]
 
 MANAGED_BY = 'health'  # tracking.Trackable.managed_by of the metric trackables
 WEIGHT_BACKFILL_DAYS = 30  # weight has no streak: a wider window than check-ins
@@ -111,3 +114,72 @@ def log_weight(user, d, weight_kg) -> WeightEntry:
         raise ValidationError({'date': f'Weight can be recorded for the last {WEIGHT_BACKFILL_DAYS} days only.'})
     entry, _ = WeightEntry.objects.update_or_create(user=user, date=d, defaults={'weight_kg': _weight(weight_kg)})
     return entry
+
+
+# ----------------------------- custom foods -------------------------------- #
+CUSTOM_FOOD_FIELDS = {'name_ar', 'name_en', 'name_fr', 'aliases', 'category', 'kcal', 'protein_g', 'carbs_g',
+                      'fat_g'}
+
+
+def _check_fields(fields):
+    unknown = set(fields) - CUSTOM_FOOD_FIELDS
+    if unknown:
+        raise ValidationError(f'Unknown fields: {", ".join(sorted(unknown))}.')
+
+
+def _owned_custom_food(user, food, *, lock=False) -> Food:
+    """The user's own custom food. Global foods and other users' foods are "unknown"."""
+    qs = Food.objects.select_for_update() if lock else Food.objects
+    try:
+        return qs.get(pk=food.pk, user=user)
+    except Food.DoesNotExist:
+        raise ValidationError({'food': 'Unknown food.'}) from None
+
+
+def _set_portions(food: Food, portions: list[dict]) -> None:
+    """Replace the food's portions with `portions` ([{'unit': 'piece', 'grams': 50}, ...])."""
+    units = [p.get('unit') for p in portions]
+    if len(units) != len(set(units)):
+        raise ValidationError({'portions': 'Each unit can appear only once.'})
+    food.portions.all().delete()
+    for portion in portions:
+        row = FoodPortion(food=food, unit=portion.get('unit'), grams=portion.get('grams'))
+        try:
+            row.full_clean(exclude=['food'])
+        except ValidationError as exc:
+            raise ValidationError({'portions': [f'{k}: {" ".join(v)}' for k, v in exc.message_dict.items()]}) from None
+        row.save()
+
+
+@transaction.atomic
+def create_custom_food(user, *, portions: list[dict] | None = None, **fields) -> Food:
+    """A private food, visible only to `user`. Nutrition is per 100 g."""
+    _check_fields(fields)
+    food = Food(user=user, source=Food.Source.CUSTOM, is_verified=False, **fields)
+    food.full_clean()
+    food.save()
+    _set_portions(food, portions or [])
+    return food
+
+
+@transaction.atomic
+def update_custom_food(user, food, *, portions: list[dict] | None = None, **fields) -> Food:
+    """
+    Edit one of the user's own custom foods (never a global one). `portions`, when
+    given, replaces them all. Past meals keep their snapshot.
+    """
+    _check_fields(fields)
+    food = _owned_custom_food(user, food, lock=True)
+    for name, value in fields.items():
+        setattr(food, name, value)
+    food.full_clean()
+    food.save()
+    if portions is not None:
+        _set_portions(food, portions)
+    return food
+
+
+@transaction.atomic
+def delete_custom_food(user, food) -> None:
+    """Delete one of the user's own custom foods. Past meals keep their snapshot."""
+    _owned_custom_food(user, food, lock=True).delete()

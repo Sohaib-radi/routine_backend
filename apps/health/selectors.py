@@ -1,11 +1,16 @@
 """Read queries for health. Every query is scoped to the given user."""
 
+import re
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
+from django.contrib.postgres.search import TrigramWordSimilarity
+from django.db.models import Case, IntegerField, Q, Value, When
+
 from apps.tracking.dates import user_today
 
-from .models import HealthMetric, HealthPlan, WeightEntry
+from .models import Food, HealthMetric, HealthPlan, WeightEntry
+from .text import normalize
 
 
 # ----------------------------- plans --------------------------------------- #
@@ -59,3 +64,46 @@ def metric_trackables(user) -> dict[str, object]:
     """{metric: trackable} for the metric trackables health created for `user`."""
     links = HealthMetric.objects.filter(user=user).select_related('trackable')
     return {link.metric: link.trackable for link in links}
+
+
+# ----------------------------- foods --------------------------------------- #
+SEARCH_MIN_LENGTH = 2
+SEARCH_DEFAULT_LIMIT = 20
+SEARCH_MAX_LIMIT = 50
+_SEPARATOR = r'(^| \| )'  # Food.search_text joins the normalized names with " | "
+
+
+def foods_for(user):
+    """Foods `user` can see: active global foods and their own custom foods."""
+    return Food.objects.filter(Q(user__isnull=True) | Q(user=user), is_active=True)
+
+
+def custom_foods_for(user):
+    return Food.objects.filter(user=user)
+
+
+def search_foods(user, query: str, limit: int = SEARCH_DEFAULT_LIMIT) -> list[Food]:
+    """
+    Search names and aliases in every language (global + the user's own foods).
+    The query is normalized like the stored text, so "طعميه" finds "طعمية".
+    Order: exact name, then names starting with the query, then trigram similarity.
+    Uses the trigram index on search_text (LIKE '%q%').
+    """
+    q = normalize(query)
+    if len(q) < SEARCH_MIN_LENGTH:
+        return []
+    limit = max(1, min(limit, SEARCH_MAX_LIMIT))
+    escaped = re.escape(q)
+    return list(
+        foods_for(user).filter(search_text__contains=q)
+        .annotate(
+            rank=Case(
+                When(search_text__regex=f'{_SEPARATOR}{escaped}( \\| |$)', then=Value(0)),
+                When(search_text__regex=f'{_SEPARATOR}{escaped}', then=Value(1)),
+                default=Value(2), output_field=IntegerField(),
+            ),
+            similarity=TrigramWordSimilarity(q, 'search_text'),
+        )
+        .order_by('rank', '-similarity', 'name_en', 'pk')
+        .prefetch_related('portions')[:limit]
+    )
