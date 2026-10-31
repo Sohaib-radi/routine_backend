@@ -18,3 +18,6 @@ CELERY_BROKER_URL = 'memory://'
 CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
 
 MEDIA_ROOT = BASE_DIR / '.test_media'  # noqa: F405
+
+# Tests never call a real AI provider.
+AI_FORCE_PROVIDER = 'fake'

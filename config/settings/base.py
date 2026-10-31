@@ -35,11 +35,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
-    # Local (dependency direction: health -> tracking -> accounts -> profiles)
+    # Local (dependency direction: ai -> health -> tracking -> accounts -> profiles)
     'apps.profiles',
     'apps.accounts',
     'apps.tracking',
     'apps.health',
+    'apps.ai',
 ]
 
 MIDDLEWARE = [
@@ -205,3 +206,21 @@ MAILERS = {
 
 # Admin theme (Unfold)
 from config.unfold import UNFOLD  # noqa: E402,F401  (read by Unfold from settings)
+
+
+# AI (apps.ai). Defaults for features without an AIFeatureConfig row in the admin.
+# API keys come from the environment only (ANTHROPIC_API_KEY, read by the SDK) and
+# are never stored in the database.
+AI_DEFAULTS = {
+    'enabled': env.bool('AI_ENABLED', default=True),
+    'provider': env('AI_PROVIDER', default='anthropic'),
+    'model': env('AI_MODEL', default='claude-haiku-5-5'),
+    'effort': env('AI_EFFORT', default='low'),
+    'daily_limit': env.int('AI_DAILY_LIMIT', default=20),
+}
+AI_PROVIDER_KEY_ENV = {'anthropic': 'ANTHROPIC_API_KEY'}  # provider -> env variable holding its key
+AI_FORCE_PROVIDER = env('AI_FORCE_PROVIDER', default='')  # tests force 'fake' whatever the admin says
+AI_TIMEOUT_SECONDS = env.float('AI_TIMEOUT_SECONDS', default=20.0)  # per provider HTTP request
+AI_PROVIDER_MAX_RETRIES = env.int('AI_PROVIDER_MAX_RETRIES', default=1)  # SDK retries (429, 5xx, network)
+AI_DRAFT_TTL_HOURS = env.int('AI_DRAFT_TTL_HOURS', default=24)
+AI_STUCK_AFTER_MINUTES = env.int('AI_STUCK_AFTER_MINUTES', default=5)  # processing longer -> failed
