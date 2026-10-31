@@ -5,6 +5,10 @@ This guide is for the people who **manage the Routine app** from the admin panel
 step, what each Health page is for, what you can do on it, and what you can't do
 (and why).
 
+> **Help is always one click away:** every Health page has a **How to use this
+> page** button (top right) that opens the matching part of this guide. The guide
+> is also in the sidebar: **Health → How to use**.
+
 > **The one rule to remember:** most Health pages are **read-only on purpose**.
 > They show what users did in the app (their plans, weights, meals). You look at
 > them to help users or check that everything works, but you don't change them:
@@ -279,8 +283,8 @@ real food list is imported.
 Adding hundreds of foods one by one is slow. Your developer can load a whole
 spreadsheet (CSV file) at once with the **import** tool. Running the same file
 again **updates** foods instead of creating duplicates, and it never re-shows foods
-you hid. Ask your developer; the file format is described in
-[docs/health.md → Food CSV format](../health.md#food-csv-format).
+you hid. Ask your developer: they have the file format (in the developer documentation,
+"Food CSV format") and can send you a ready-to-fill spreadsheet.
 
 ### 5.9 Several foods at once
 

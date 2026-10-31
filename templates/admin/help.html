@@ -1,0 +1,14 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="admin-help flex flex-col gap-8 lg:flex-row">
+  <nav class="admin-help-toc lg:w-72 lg:shrink-0" aria-label="{% translate 'Contents' %}">
+    <p class="admin-help-toc-title">{% translate "Contents" %}</p>
+    {{ guide_toc|safe }}
+  </nav>
+  <article class="admin-help-body min-w-0 max-w-4xl grow">
+    {{ guide_html|safe }}
+  </article>
+</div>
+{% endblock %}

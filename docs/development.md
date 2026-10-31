@@ -59,6 +59,21 @@ read only there, so the admin cannot bypass the tracking rules. Streak caches ca
 recomputed from an admin action. Profiles are activated, deactivated and made
 default only through dedicated actions so users stay consistent.
 
+**Help inside the admin.** Staff guides live in `docs/admin-guide/<app>.md` and are
+shown in the admin at `/admin/help/<app>/` (rendered with `markdown`, staff only).
+To give an admin page a "How to use this page" button:
+
+```python
+from config.admin_help import HelpLinkMixin
+
+class FoodAdmin(HelpLinkMixin, ModelAdmin):
+    help_guide, help_section = 'health', '5-foods'  # guide file, heading anchor
+```
+
+A new guide also needs an entry in `config.admin_help.GUIDES` and a "How to use"
+item in the sidebar. Tests check that every button's section exists and that every
+link inside a guide points to one of its headings.
+
 The sidebar is an explicit list in `config/unfold.py` (`SIDEBAR.navigation`, with
 `show_all_applications` off). **When you register a new admin, add it there**, with an
 icon and its `view_*` permission; a test fails if a registered admin has no sidebar link.

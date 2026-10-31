@@ -150,3 +150,7 @@ project later and must understand it without asking anyone. Keep it accurate.
   not developers: for every admin page, explain step by step (A to Z) how to open it,
   read it, use it, what they cannot do and why, and common situations. No jargon.
   A new or changed admin page updates its guide in the same change.
+  Staff read the guides **inside the admin** (never GitHub): `/admin/help/<app>/`
+  renders the Markdown file, and each page gets a "How to use this page" button via
+  `config.admin_help.HelpLinkMixin` (`help_guide`, `help_section` = the heading's anchor).
+  Links inside a guide may only point to its own headings.

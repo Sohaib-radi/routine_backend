@@ -64,6 +64,13 @@ def _has_perm(permission):
     return check
 
 
+def _has_any_perm_in(app_label):
+    """Sidebar check: the user may see at least one page of ``app_label``."""
+    def check(request):
+        return request.user.has_module_perms(app_label)
+    return check
+
+
 def _nav_item(title, icon, url_name, permission):
     return {
         'title': title,
@@ -132,6 +139,12 @@ UNFOLD = {
                     _nav_item(_('Meals'), 'lunch_dining', 'admin:health_meal_changelist', 'health.view_meal'),
                     _nav_item(_('Metric trackables'), 'link', 'admin:health_healthmetric_changelist',
                               'health.view_healthmetric'),
+                    {
+                        'title': _('How to use'),
+                        'icon': 'help',
+                        'link': reverse_lazy('admin-help', args=['health']),
+                        'permission': _has_any_perm_in('health'),
+                    },
                 ],
             },
             {

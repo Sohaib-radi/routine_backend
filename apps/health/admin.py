@@ -7,6 +7,8 @@ trackables in sync). Staff edit the global foods; users' custom foods are read-o
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 
+from config.admin_help import HelpLinkMixin
+
 from .models import Food, FoodPortion, HealthMetric, HealthPlan, Meal, MealItem, WeightEntry
 
 
@@ -19,7 +21,8 @@ class ReadOnlyAdmin(ModelAdmin):
 
 
 @admin.register(HealthPlan)
-class HealthPlanAdmin(ReadOnlyAdmin):
+class HealthPlanAdmin(HelpLinkMixin, ReadOnlyAdmin):
+    help_guide, help_section = 'health', '3-plans'
     list_display = ['user', 'effective_from', 'goal', 'mode', 'calories', 'protein_g', 'carbs_g', 'fat_g',
                     'water_ml']
     list_filter = ['goal', 'mode', 'sex']
@@ -29,7 +32,8 @@ class HealthPlanAdmin(ReadOnlyAdmin):
 
 
 @admin.register(WeightEntry)
-class WeightEntryAdmin(ReadOnlyAdmin):
+class WeightEntryAdmin(HelpLinkMixin, ReadOnlyAdmin):
+    help_guide, help_section = 'health', '4-weight'
     list_display = ['user', 'date', 'weight_kg']
     list_select_related = ['user']
     search_fields = ['user__email']
@@ -37,7 +41,8 @@ class WeightEntryAdmin(ReadOnlyAdmin):
 
 
 @admin.register(HealthMetric)
-class HealthMetricAdmin(ReadOnlyAdmin):
+class HealthMetricAdmin(HelpLinkMixin, ReadOnlyAdmin):
+    help_guide, help_section = 'health', '7-metric-trackables'
     list_display = ['user', 'metric', 'trackable']
     list_filter = ['metric']
     list_select_related = ['user', 'trackable']
@@ -75,8 +80,10 @@ class CustomFoodFilter(admin.SimpleListFilter):
 
 
 @admin.register(Food)
-class FoodAdmin(ModelAdmin):
+class FoodAdmin(HelpLinkMixin, ModelAdmin):
     """Global foods are created here (owner empty); custom foods belong to users and are read-only."""
+
+    help_guide, help_section = 'health', '5-foods'
 
     list_display = ['__str__', 'name_ar', 'category', 'kcal', 'protein_g', 'carbs_g', 'fat_g', 'source',
                     'is_verified', 'is_active', 'user']
@@ -111,8 +118,10 @@ class MealItemInline(TabularInline):
 
 
 @admin.register(Meal)
-class MealAdmin(ReadOnlyAdmin):
+class MealAdmin(HelpLinkMixin, ReadOnlyAdmin):
     """Read-only: meals are logged through health.services (date window, snapshots)."""
+
+    help_guide, help_section = 'health', '6-meals'
 
     list_display = ['user', 'date', 'meal_type', 'source', 'created_at']
     list_filter = ['meal_type', 'source']

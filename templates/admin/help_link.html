@@ -1,0 +1,4 @@
+{% load i18n %}{% comment %}
+"How to use this page" button (config.admin_help.HelpLinkMixin). Included above the
+list (context has `cl`) and above the form (context has `adminform`).
+{% endcomment %}{% if cl.model_admin.help_url %}{% include "admin/help_button.html" with url=cl.model_admin.help_url %}{% elif adminform.model_admin.help_url %}{% include "admin/help_button.html" with url=adminform.model_admin.help_url %}{% endif %}

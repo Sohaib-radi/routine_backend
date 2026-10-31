@@ -5,6 +5,8 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from config.admin_help import help_view
+
 api_v1 = [
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
@@ -18,6 +20,7 @@ api_v1 = [
 urlpatterns = [
     # The site root opens the admin (its login page when signed out).
     path('', RedirectView.as_view(pattern_name='admin:index'), name='root'),
+    path('admin/help/<slug:guide>/', admin.site.admin_view(help_view), name='admin-help'),  # how-to guides
     path('admin/', admin.site.urls),
     path('i18n/', include('django.conf.urls.i18n')),  # language switcher in the admin
     path('api/v1/', include(api_v1)),

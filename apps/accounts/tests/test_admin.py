@@ -138,7 +138,7 @@ class SidebarTests(TestCase):
         self.assertEqual(layout, [
             (['Users', 'Profiles', 'Roles'], 'Accounts'),
             (['Trackables', 'Check-ins', 'Pauses', 'Streaks'], 'Tracking'),
-            (['Plans', 'Weight', 'Foods', 'Meals', 'Metric trackables'], 'Health'),
+            (['Plans', 'Weight', 'Foods', 'Meals', 'Metric trackables', 'How to use'], 'Health'),
             (['Feature configuration', 'Prices', 'Usage', 'Daily usage', 'Meal drafts'], 'AI'),
             (['Outstanding tokens', 'Blacklisted tokens'], 'Security'),
         ])
@@ -149,7 +149,7 @@ class SidebarTests(TestCase):
             '/admin/tracking/trackable/', '/admin/tracking/checkin/', '/admin/tracking/pause/',
             '/admin/tracking/streakcache/',
             '/admin/health/healthplan/', '/admin/health/weightentry/', '/admin/health/food/',
-            '/admin/health/meal/', '/admin/health/healthmetric/',
+            '/admin/health/meal/', '/admin/health/healthmetric/', '/admin/help/health/',
             '/admin/ai/aifeatureconfig/', '/admin/ai/providerprice/', '/admin/ai/aiusage/',
             '/admin/ai/aiusage/daily/', '/admin/ai/mealdraft/',
             '/admin/token_blacklist/outstandingtoken/', '/admin/token_blacklist/blacklistedtoken/',

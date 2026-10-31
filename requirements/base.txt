@@ -10,6 +10,7 @@ redis==8.1.0
 python-dateutil==3.0.0
 pillow==13.0.0
 anthropic==2.3.0
+Markdown==3.11.2  # admin help pages (docs/admin-guide)
 # transitive pins
 asgiref==3.12.1
 PyJWT==2.15.1

@@ -109,3 +109,41 @@ html[dir="rtl"] input[type="text"],
 html[dir="rtl"] textarea {
     unicode-bidi: plaintext;
 }
+
+/* ------------------------------------------------------------------------ */
+/* Admin help pages (/admin/help/<guide>/), rendered from docs/admin-guide/. */
+/* Tailwind's reset removes heading, list and table styles: restore them,   */
+/* using currentColor so light and dark themes both work.                   */
+/* ------------------------------------------------------------------------ */
+.admin-help-body { line-height: 1.65; }
+.admin-help-body h1 { font-size: 1.6rem; font-weight: 700; margin: 0 0 1rem; }
+.admin-help-body h2 { font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 0.75rem; padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent); scroll-margin-top: 5rem; }
+.admin-help-body h3 { font-size: 1.1rem; font-weight: 600; margin: 1.75rem 0 0.5rem; scroll-margin-top: 5rem; }
+.admin-help-body p { margin: 0 0 0.85rem; }
+.admin-help-body ul, .admin-help-body ol { margin: 0 0 0.85rem; padding-inline-start: 1.5rem; }
+.admin-help-body ul { list-style: disc; }
+.admin-help-body ol { list-style: decimal; }
+.admin-help-body li { margin: 0.25rem 0; }
+.admin-help-body li > ul, .admin-help-body li > ol { margin: 0.25rem 0; }
+.admin-help-body a { text-decoration: underline; text-underline-offset: 2px; }
+.admin-help-body strong { font-weight: 600; }
+.admin-help-body code { font-family: ui-monospace, Menlo, monospace; font-size: 0.9em; padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem; background: color-mix(in srgb, currentColor 10%, transparent); }
+.admin-help-body blockquote { margin: 0 0 1rem; padding: 0.75rem 1rem; border-inline-start: 4px solid var(--color-primary-500);
+  background: color-mix(in srgb, var(--color-primary-500) 12%, transparent); border-radius: 0.25rem; }
+.admin-help-body blockquote p:last-child { margin-bottom: 0; }
+.admin-help-body hr { border: 0; border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent); margin: 1.5rem 0; }
+.admin-help-body table { width: 100%; border-collapse: collapse; margin: 0 0 1rem; font-size: 0.9rem; display: block;
+  overflow-x: auto; }
+.admin-help-body th, .admin-help-body td { text-align: start; vertical-align: top; padding: 0.45rem 0.6rem;
+  border: 1px solid color-mix(in srgb, currentColor 15%, transparent); }
+.admin-help-body th { font-weight: 600; background: color-mix(in srgb, currentColor 6%, transparent); }
+.admin-help-toc { font-size: 0.9rem; }
+.admin-help-toc-title { font-weight: 600; margin-bottom: 0.5rem; }
+.admin-help-toc ul { list-style: none; padding: 0; margin: 0; }
+.admin-help-toc ul ul { padding-inline-start: 1rem; }
+.admin-help-toc li { margin: 0.2rem 0; }
+.admin-help-toc a:hover { text-decoration: underline; }
+@media (min-width: 1024px) { .admin-help-toc { position: sticky; top: 5rem; align-self: flex-start;
+  max-height: calc(100vh - 6rem); overflow-y: auto; } }

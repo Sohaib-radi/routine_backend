@@ -139,3 +139,11 @@ What has been built so far, oldest first.
 - `docs/admin-guide/health.md`: a step-by-step, non-technical guide to every Health
   page of the admin panel (plans, weight, foods, meals, metric trackables).
 - CLAUDE.md: every admin page gets a non-technical guide in `docs/admin-guide/`.
+
+### Help inside the admin
+
+- The Health admin guide is shown inside the admin at `/admin/help/health/`
+  (same Markdown file as `docs/admin-guide/health.md`), with a table of contents.
+- Every Health page has a "How to use this page" button that opens its section,
+  and the sidebar has Health → How to use.
+- `config.admin_help.HelpLinkMixin` for future admin pages; `Markdown` added to requirements.
