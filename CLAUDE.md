@@ -128,3 +128,20 @@ portion, confirms, and it is saved with `source=photo`.
 - Heavy work (AI calls, streak recompute, notifications) runs in Celery, never in
   the request.
 - Every new service function gets tests.
+
+## Documentation
+
+The documentation in `docs/` is written for other developers who will join the
+project later and must understand it without asking anyone. Keep it accurate.
+
+- **Each module (app) has its own documentation page** in `docs/` (e.g.
+  `docs/tracking.md`). A new app gets its page in the same change that creates it.
+- A module page explains: what the module is for, its models and key fields, its
+  services and selectors, its rules (with a concrete example), its API endpoints,
+  its Celery tasks, and known limitations / TODOs.
+- Any change to a module's behaviour, rules, models or endpoints updates its page
+  in the same change. Code and documentation never disagree.
+- Cross-cutting topics stay in their own pages: `docs/architecture.md`,
+  `docs/api.md`, `docs/development.md`. Add each shipped change to `docs/changelog.md`.
+- Link every new page from the README's "Documentation" section.
+- Write for a newcomer: plain language, explain the "why", no assumed context.
