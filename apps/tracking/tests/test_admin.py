@@ -4,7 +4,7 @@ import pytest
 from django.urls import reverse
 
 from apps.tracking import services
-from apps.tracking.tests.test_services import log
+from apps.tracking.tests.test_services import log, pause
 from apps.tracking.models import StreakCache, Trackable
 
 pytestmark = pytest.mark.django_db
@@ -15,9 +15,9 @@ def data(user):
     t = services.create_trackable(user, name='Water', kind=Trackable.Kind.QUANTITY, target_value=8,
                                   start_date=date(2026, 1, 1))
     checkin = log(user, t, date(2026, 1, 2), value=3)
-    pause = services.create_pause(user, start_date=date(2026, 1, 5))
+    pause_ = pause(user, start_date=date(2026, 1, 5))
     cache = services.refresh_streak_cache(t.pk)
-    return t, checkin, pause, cache
+    return t, checkin, pause_, cache
 
 
 @pytest.fixture

@@ -8,10 +8,11 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from dateutil.rrule import rrulestr
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 
 from .dates import user_today
-from .models import CheckIn, Pause, Schedule, Trackable
+from .models import CheckIn, Pause, Schedule, StreakCache, Trackable
 
 
 def _days(start: date, end: date):
@@ -77,26 +78,96 @@ def is_scheduled(schedule: Schedule, d: date) -> bool:
 
 def trackables_for(user):
     """The user's trackables (always scoped to `user`)."""
-    return Trackable.objects.filter(user=user).select_related('schedule')
+    return Trackable.objects.filter(user=user).select_related('schedule', 'streak')
+
+
+def _paused_today(user, today: date) -> tuple[bool, set]:
+    """One query: (is everything paused?, ids of trackables paused individually) on `today`."""
+    scopes = set(
+        Pause.objects.filter(Q(end_date__isnull=True) | Q(end_date__gte=today), user=user, start_date__lte=today)
+        .values_list('trackable_id', flat=True)
+    )
+    return None in scopes, scopes - {None}
+
+
+def _due(user, today: date, trackables) -> list[Trackable]:
+    everything_paused, paused_ids = _paused_today(user, today)
+    if everything_paused:
+        return []
+    return [t for t in trackables if t.pk not in paused_ids and is_scheduled(t.schedule, today)]
 
 
 def due_today(user) -> list[Trackable]:
     """Trackables to show on the user's 'Today' screen, in the user's local date."""
+    return _due(user, user_today(user), trackables_for(user).filter(is_archived=False))
+
+
+@dataclass(frozen=True)
+class TodayItem:
+    trackable: Trackable
+    checkin: CheckIn | None
+    streak: StreakCache | None
+
+
+@dataclass(frozen=True)
+class TodayScreen:
+    date: date
+    items: list[TodayItem]
+
+
+def today_screen(user) -> TodayScreen:
+    """
+    The "Today" screen: due trackables, today's check-in and cached streak for each.
+    Three queries whatever the number of trackables: trackables (+schedule, +streak),
+    today's pauses, today's check-ins.
+    """
     today = user_today(user)
-    trackables = list(trackables_for(user).filter(is_archived=False))
-    global_paused = Pause.objects.filter(
-        Q(end_date__isnull=True) | Q(end_date__gte=today),
-        user=user, trackable__isnull=True, start_date__lte=today,
-    ).exists()
-    if global_paused:
-        return []
-    paused_ids = set(
-        Pause.objects.filter(
-            Q(end_date__isnull=True) | Q(end_date__gte=today),
-            user=user, trackable__in=trackables, start_date__lte=today,
-        ).values_list('trackable_id', flat=True)
+    due = _due(user, today, trackables_for(user).filter(is_archived=False).order_by('created_at'))
+    checkins = {
+        c.trackable_id: c
+        for c in CheckIn.objects.filter(user=user, date=today, trackable__in=[t.pk for t in due])
+    } if due else {}
+    return TodayScreen(
+        date=today,
+        items=[TodayItem(t, checkins.get(t.pk), getattr(t, 'streak', None)) for t in due],
     )
-    return [t for t in trackables if t.pk not in paused_ids and is_scheduled(t.schedule, today)]
+
+
+# ----------------------------- check-ins & pauses -------------------------- #
+HISTORY_DEFAULT_DAYS = 30
+HISTORY_MAX_DAYS = 366
+
+
+def checkins_for(user):
+    """The user's check-ins (always scoped to `user`)."""
+    return CheckIn.objects.filter(user=user)
+
+
+def checkin_history(user, trackable, start: date | None = None, end: date | None = None):
+    """
+    Check-ins of one of the user's trackables in [start, end], newest first.
+    Defaults to the last 30 days; at most 366 days per request.
+    """
+    end = end or user_today(user)
+    start = start or end - timedelta(days=HISTORY_DEFAULT_DAYS - 1)
+    if start > end:
+        raise ValidationError({'from': 'Must be on or before `to`.'})
+    if (end - start).days + 1 > HISTORY_MAX_DAYS:
+        raise ValidationError({'from': f'At most {HISTORY_MAX_DAYS} days per request.'})
+    return checkins_for(user).filter(trackable=trackable, date__gte=start, date__lte=end).order_by('-date')
+
+
+def pauses_for(user, *, active: bool | None = None):
+    """
+    The user's pauses, newest first. active=True: running or planned (not over);
+    active=False: over.
+    """
+    qs = Pause.objects.filter(user=user).select_related('trackable').order_by('-start_date', '-created_at')
+    if active is None:
+        return qs
+    today = user_today(user)
+    current = Q(end_date__isnull=True) | Q(end_date__gte=today)
+    return qs.filter(current) if active else qs.exclude(current)
 
 
 # ----------------------------- streaks ------------------------------------- #

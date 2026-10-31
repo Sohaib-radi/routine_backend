@@ -35,6 +35,12 @@ def skip(user, trackable, d, **kwargs):
         return services.skip_checkin(user, trackable, d, **kwargs)
 
 
+def pause(user, *, start_date, **kwargs):
+    """Build history: create a pause on the day it starts (start_date >= yesterday)."""
+    with as_of(start_date):
+        return services.create_pause(user, start_date=start_date, **kwargs)
+
+
 @pytest.fixture
 def habit(user):
     """A daily boolean habit that started on D."""
@@ -284,39 +290,39 @@ class TestPauses:
     def test_pause_never_touches_checkins(self, user, habit):
         log(user, habit, day(3))
         before = list(CheckIn.objects.values())
-        services.create_pause(user, start_date=day(1), end_date=day(5))
-        services.create_pause(user, start_date=day(2), trackable=habit)
+        pause(user, start_date=day(1), end_date=day(5))
+        pause(user, start_date=day(2), trackable=habit)
         assert list(CheckIn.objects.values()) == before
 
     def test_end_before_start_is_refused(self, user):
         with pytest.raises(ValidationError):
-            services.create_pause(user, start_date=day(5), end_date=day(4))
+            pause(user, start_date=day(5), end_date=day(4))
 
     def test_cannot_pause_another_users_trackable(self, make_user, habit):
         with pytest.raises(ValidationError):
-            services.create_pause(make_user(), start_date=day(1), trackable=habit)
+            pause(make_user(), start_date=day(1), trackable=habit)
 
     def test_paused_dates_cover_global_and_specific_pauses(self, user, habit, water):
-        services.create_pause(user, start_date=day(1), end_date=day(2))           # everything
-        services.create_pause(user, start_date=day(5), end_date=day(5), trackable=water)
-        services.create_pause(user, start_date=day(8))                             # open-ended
+        pause(user, start_date=day(1), end_date=day(2))           # everything
+        pause(user, start_date=day(5), end_date=day(5), trackable=water)
+        pause(user, start_date=day(8))                             # open-ended
         assert selectors.paused_dates(user, habit, D, day(9)) == {day(1), day(2), day(8), day(9)}
         assert selectors.paused_dates(user, water, D, day(9)) == {day(1), day(2), day(5), day(8), day(9)}
 
     def test_paused_dates_ignore_other_users(self, make_user, habit, user):
-        services.create_pause(make_user(), start_date=day(1))
+        pause(make_user(), start_date=day(1))
         assert selectors.paused_dates(user, habit, D, day(9)) == set()
 
     def test_end_pause_defaults_to_yesterday(self, user, freeze_utc):
         freeze_utc(2026, 1, 20, 12, 0)
-        pause = services.create_pause(user, start_date=day(1))
-        pause = services.end_pause(user, pause)
-        assert pause.end_date == date(2026, 1, 19)
+        p = pause(user, start_date=day(1))
+        p = services.end_pause(user, p)
+        assert p.end_date == date(2026, 1, 19)
 
     def test_end_pause_that_never_started_deletes_it(self, user, freeze_utc):
         freeze_utc(2026, 1, 20, 12, 0)
-        pause = services.create_pause(user, start_date=date(2026, 1, 20))
-        assert services.end_pause(user, pause) is None
+        p = pause(user, start_date=date(2026, 1, 20))
+        assert services.end_pause(user, p) is None
         assert not Pause.objects.exists()
 
 
@@ -348,11 +354,11 @@ class TestSchedule:
         services.create_trackable(user, name='Fridays', start_date=D,
                                   schedule={'frequency': 'weekdays', 'weekdays_mask': 16})
         paused = services.create_trackable(user, name='Paused', start_date=D)
-        services.create_pause(user, start_date=D, trackable=paused)
+        pause(user, start_date=D, trackable=paused)
         services.create_trackable(make_user(), name='Not mine', start_date=D)
         assert selectors.due_today(user) == [daily]
 
-        services.create_pause(user, start_date=date(2026, 1, 5), end_date=date(2026, 1, 5))
+        pause(user, start_date=date(2026, 1, 5), end_date=date(2026, 1, 5))
         assert selectors.due_today(user) == []
 
 
@@ -385,14 +391,14 @@ class TestStreak:
         # done 0-1, paused 2-4 (no check-ins), done 5-6: streak continues through the pause.
         for n in (0, 1, 5, 6):
             log(user, habit, day(n))
-        services.create_pause(user, start_date=day(2), end_date=day(4), reason=Pause.Reason.VACATION)
+        pause(user, start_date=day(2), end_date=day(4), reason=Pause.Reason.VACATION)
         stats = selectors.compute_streak(habit, today=day(6))
         assert (stats.current, stats.longest) == (4, 4)  # paused days don't extend it either
 
     def test_trackable_specific_and_open_ended_pauses(self, user, habit, water):
         for n in (0, 1):
             log(user, habit, day(n))
-        services.create_pause(user, start_date=day(2), trackable=habit)  # open-ended
+        pause(user, start_date=day(2), trackable=habit)  # open-ended
         assert selectors.compute_streak(habit, today=day(9)).current == 2
         # another trackable's pause doesn't protect this one
         log(user, water, day(0), value=8)
@@ -401,7 +407,7 @@ class TestStreak:
     def test_checkin_during_pause_is_kept_but_neutral(self, user, habit):
         log(user, habit, day(0))
         log(user, habit, day(1))
-        services.create_pause(user, start_date=day(1), end_date=day(1))
+        pause(user, start_date=day(1), end_date=day(1))
         assert CheckIn.objects.filter(date=day(1)).exists()  # history untouched
         assert selectors.compute_streak(habit, today=day(1)).current == 1
 
@@ -441,7 +447,7 @@ class TestStreak:
         # Window: day(11)..day(40). Done on even days 12..40 (today included).
         for n in range(12, 41, 2):
             log(user, habit, day(n))
-        services.create_pause(user, start_date=day(12), end_date=day(21))  # 10 days are neutral
+        pause(user, start_date=day(12), end_date=day(21))  # 10 days are neutral
         # Counted: day(11) + day(22)..day(40) = 20 days, of which 10 done.
         assert selectors.compute_streak(habit, today=today).completion_rate_30d == Decimal('50.00')
 
@@ -492,5 +498,5 @@ class TestRecomputeTask:
     def test_pause_queues_recompute_for_all_trackables(self, user, habit, water,
                                                        django_capture_on_commit_callbacks):
         with django_capture_on_commit_callbacks() as callbacks:
-            services.create_pause(user, start_date=day(1))
+            pause(user, start_date=day(1))
         assert len(callbacks) == 2
