@@ -2,13 +2,54 @@
 {% load i18n %}
 
 {% block content %}
-<div class="admin-help flex flex-col gap-8 lg:flex-row">
-  <nav class="admin-help-toc lg:w-72 lg:shrink-0" aria-label="{% translate 'Contents' %}">
-    <p class="admin-help-toc-title">{% translate "Contents" %}</p>
-    {{ guide_toc|safe }}
-  </nav>
-  <article class="admin-help-body min-w-0 max-w-4xl grow">
+{# The guides are written in English: keep them left-to-right even when the admin is in Arabic. #}
+<div class="admin-help" dir="ltr" lang="en">
+  <aside class="admin-help-toc" aria-label="{% translate 'On this page' %}">
+    <div class="admin-help-toc-card">
+      <div class="admin-help-toc-head">
+        <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+        <span>{% translate "On this page" %}</span>
+      </div>
+      {{ guide_toc|safe }}
+    </div>
+  </aside>
+  <article class="admin-help-body">
     {{ guide_html|safe }}
   </article>
 </div>
+
+<script>
+  // Highlight the section being read in the side panel, and scroll smoothly to a clicked section.
+  (function () {
+    const links = Array.from(document.querySelectorAll('.admin-help-toc a[href^="#"]'));
+    const byId = new Map(links.map((a) => [decodeURIComponent(a.hash.slice(1)), a]));
+    const headings = Array.from(document.querySelectorAll('.admin-help-body h2[id], .admin-help-body h3[id]'))
+      .filter((h) => byId.has(h.id));
+    function activate(id) {
+      links.forEach((a) => a.classList.remove('is-active', 'is-active-parent'));
+      const link = byId.get(id);
+      if (!link) return;
+      link.classList.add('is-active');
+      const parent = link.closest('ul')?.closest('li')?.querySelector(':scope > a');
+      if (parent) parent.classList.add('is-active-parent');
+    }
+    const visible = new Set();
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((e) => (e.isIntersecting ? visible.add(e.target) : visible.delete(e.target)));
+      const current = headings.find((h) => visible.has(h));
+      if (current) activate(current.id);
+    }, { rootMargin: '-80px 0px -65% 0px' });
+    headings.forEach((h) => observer.observe(h));
+    links.forEach((a) => a.addEventListener('click', (event) => {
+      const target = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+      if (!target) return;
+      event.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      history.replaceState(null, '', a.hash);
+      activate(target.id);
+    }));
+    if (location.hash) activate(decodeURIComponent(location.hash.slice(1)));
+    else if (headings[0]) activate(headings[0].id);
+  })();
+</script>
 {% endblock %}

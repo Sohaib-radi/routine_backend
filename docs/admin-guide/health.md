@@ -34,14 +34,14 @@ step, what each Health page is for, what you can do on it, and what you can't do
 ## 1. Before you start: opening the admin panel
 
 1. Open the admin address in your web browser (Chrome, Safari, Edge…). Your
-   developer gives you the address; it ends with **`/admin/`**
-   (for example `https://api.your-domain.com/admin/`).
+    developer gives you the address; it ends with **`/admin/`**
+    (for example `https://api.your-domain.com/admin/`).
 2. Type your **email** and **password**, then click **Log in**.
-   - Forgot your password? Ask the person who created your account to set a new one.
+    - Forgot your password? Ask the person who created your account to set a new one.
 3. You arrive on the home page. On the **left** you see the **sidebar** with groups:
-   *Accounts*, *Tracking*, **Health**, *AI*, *Security*.
+    *Accounts*, *Tracking*, **Health**, *AI*, *Security*.
 4. Under **Health** you find five pages: **Plans**, **Weight**, **Foods**,
-   **Meals**, **Metric trackables**. Click a name to open the page.
+    **Meals**, **Metric trackables**. Click a name to open the page.
 
 **I don't see the Health group or some of its pages.** You only see the pages
 your account is allowed to see. Ask an administrator to give your account the
@@ -105,12 +105,12 @@ twice on the same day, that day's row is simply updated.
 1. Click **Health → Plans**.
 2. To find one user's plans, type their **email** in the search box and press **Enter**.
 3. The newest version is at the **top**. The one with the latest *Effective from*
-   date (today or before) is the plan the user is following now.
+    date (today or before) is the plan the user is following now.
 4. Click a row to see all the details: birth year (the app stores the year, not
-   the age), height, activity level, and whether the **calorie floor** was applied.
+    the age), height, activity level, and whether the **calorie floor** was applied.
 5. Use the filters (**Goal**, **Mode**, **Sex**) to answer questions such as "how
-   many plans are weight-loss plans?" (the number of results is shown with the list).
-   Remember that one user can have several versions.
+    many plans are weight-loss plans?" (the number of results is shown with the list).
+    Remember that one user can have several versions.
 
 **Good to know:**
 - **Calorie floor applied = Yes** means the formula gave a very low number, so the
@@ -187,7 +187,7 @@ need checking), **Is active** (find hidden foods).
 
 1. Click **Health → Foods**.
 2. Type part of the name in the search box (Arabic, English or French), for
-   example `كشري` or `koshari`, and press **Enter**.
+    example `كشري` or `koshari`, and press **Enter**.
 
 > The search box here matches the letters you type. The **app** is smarter: it also
 > understands spelling variants (طعمية / طعميه, أرز / ارز) and other names
@@ -199,54 +199,54 @@ need checking), **Is active** (find hidden foods).
 1. Click **Health → Foods**, then the **Add food** button (top right).
 2. Fill in the form:
 
-   | Field | What to type | Example |
-   |-------|--------------|---------|
-   | **Name ar** | The Arabic name, as people write it | كشري |
-   | **Name en** | The English name | Koshari |
-   | **Name fr** | The French name | Koshari |
-   | **Aliases** | Other names people use, in any language (see below) | `["كشرى", "kushari"]` |
-   | **Category** | Choose from the list | Dish |
-   | **Kcal** | Calories **per 100 g** | 150 |
-   | **Protein g** | Grams of protein **per 100 g** | 5 |
-   | **Carbs g** | Grams of carbohydrates **per 100 g** | 27 |
-   | **Fat g** | Grams of fat **per 100 g** | 2.5 |
-   | **Source** | Where the numbers come from (see 5.6) | NNI (Egypt) |
-   | **Key** | A short code that identifies the food: lowercase English letters, numbers and dashes, **no spaces**, unique for this source | `koshari` |
-   | **Is verified** | Tick it only if you checked the numbers against a trusted source | ✔ |
-   | **Is active** | Leave ticked so users can find it | ✔ |
+    | Field | What to type | Example |
+    |-------|--------------|---------|
+    | **Name ar** | The Arabic name, as people write it | كشري |
+    | **Name en** | The English name | Koshari |
+    | **Name fr** | The French name | Koshari |
+    | **Aliases** | Other names people use, in any language (see below) | `["كشرى", "kushari"]` |
+    | **Category** | Choose from the list | Dish |
+    | **Kcal** | Calories **per 100 g** | 150 |
+    | **Protein g** | Grams of protein **per 100 g** | 5 |
+    | **Carbs g** | Grams of carbohydrates **per 100 g** | 27 |
+    | **Fat g** | Grams of fat **per 100 g** | 2.5 |
+    | **Source** | Where the numbers come from (see 5.6) | NNI (Egypt) |
+    | **Key** | A short code that identifies the food: lowercase English letters, numbers and dashes, **no spaces**, unique for this source | `koshari` |
+    | **Is verified** | Tick it only if you checked the numbers against a trusted source | ✔ |
+    | **Is active** | Leave ticked so users can find it | ✔ |
 
-   - At least **one name** (Arabic, English or French) is required. Fill in all three when you can.
-   - All numbers are **per 100 grams**, never per plate. The app does the maths for each portion.
-   - Kcal can be 0–900; protein, carbs and fat each 0–100, and **together** at most 100 (100 g of food can't contain more than 100 g of nutrients).
+    - At least **one name** (Arabic, English or French) is required. Fill in all three when you can.
+    - All numbers are **per 100 grams**, never per plate. The app does the maths for each portion.
+    - Kcal can be 0–900; protein, carbs and fat each 0–100, and **together** at most 100 (100 g of food can't contain more than 100 g of nutrients).
 
 3. **Aliases: how to type them.** Write the names between square brackets, each
-   name between double quotes, separated by commas:
-   - One alias: `["فلافل"]`
-   - Several: `["فلافل", "ta'meya", "taameya"]`
-   - None: `[]`
+    name between double quotes, separated by commas:
+    - One alias: `["فلافل"]`
+    - Several: `["فلافل", "ta'meya", "taameya"]`
+    - None: `[]`
 
-   Use straight double quotes `"`, not curly ones. If you see an error on this
-   field, check the brackets and quotes.
+    Use straight double quotes `"`, not curly ones. If you see an error on this
+    field, check the brackets and quotes.
 
 4. **Add the portions** (section *Food portions* at the bottom). A portion is a
-   common serving with its weight, so users can tap "1 plate" instead of typing grams:
-   1. Click **Add another Food portion**.
-   2. Choose the **Unit** (plate, small plate, bowl, piece, sandwich, slice, loaf,
-      cup, glass, can, bottle, tablespoon, handful).
-   3. Type the **Grams** of one such portion. Example: plate → `350`, small plate → `250`.
-   4. Repeat for each portion. Each unit can appear only **once** per food.
+    common serving with its weight, so users can tap "1 plate" instead of typing grams:
+    1. Click **Add another Food portion**.
+    2. Choose the **Unit** (plate, small plate, bowl, piece, sandwich, slice, loaf,
+        cup, glass, can, bottle, tablespoon, handful).
+    3. Type the **Grams** of one such portion. Example: plate → `350`, small plate → `250`.
+    4. Repeat for each portion. Each unit can appear only **once** per food.
 
-   No portion fits? Leave the section empty: users can always type grams.
+    No portion fits? Leave the section empty: users can always type grams.
 
 5. Click **Save** (or **Save and add another** to continue with the next food).
 6. If something is wrong, the page shows the problem **in red** next to the field.
-   Fix it and click **Save** again.
+    Fix it and click **Save** again.
 
 ### 5.5 Edit a food
 
 1. Find the food (5.3) and click its name.
 2. Change what you need: names, aliases, numbers, portions.
-   - To **remove a portion**, tick its **Delete** box, then save.
+    - To **remove a portion**, tick its **Delete** box, then save.
 3. Click **Save**.
 
 **What happens to past meals?** Nothing. Every logged meal keeps a **copy** of the
@@ -320,9 +320,9 @@ AI meals are always **confirmed by the user** before they are saved.
 1. Click **Health → Meals**.
 2. Search the user's **email**; use the **dates** row to go to the day you want.
 3. Click a meal to open it. The **items** table shows each food of the meal:
-   name, portion, quantity, grams, kcal, protein, carbs, fat.
+    name, portion, quantity, grams, kcal, protein, carbs, fat.
 4. To check a user's calories for a day, add up the **kcal** of that day's meals
-   (the app shows this total to the user on their calorie ring).
+    (the app shows this total to the user on their calorie ring).
 
 **Good to know:**
 - The numbers on a meal are the ones **at the moment it was logged** (see 5.5).

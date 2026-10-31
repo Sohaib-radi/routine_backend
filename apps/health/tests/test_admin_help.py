@@ -81,3 +81,23 @@ def test_detail_pages_have_the_help_button_too(admin_client, user):
         html = admin_client.get(reverse(f'admin:health_{name}_change', args=[obj.pk])).content.decode()
         assert f'href="/admin/help/health/#{section}"' in html, name
     assert admin_client.get(reverse('admin:health_food_add')).content.decode().count('/admin/help/health/#5-foods') == 1
+
+
+def test_side_panel_has_number_badges_and_no_duplicate_contents(admin_client):
+    html = admin_client.get('/admin/help/health/').content.decode()
+    assert 'On this page' in html
+    assert '<span class="admin-help-toc-num">5</span><span class="admin-help-toc-text">Foods</span>' in html
+    assert '<span class="admin-help-toc-subnum">5.4</span>' in html
+    assert 'id="contents"' not in html and 'href="#contents"' not in html  # the side panel replaces it
+
+
+def test_guide_stays_left_to_right_in_arabic(admin_client):
+    html = admin_client.get('/admin/help/health/', HTTP_ACCEPT_LANGUAGE='ar').content.decode()
+    assert '<div class="admin-help" dir="ltr" lang="en">' in html
+
+
+def test_nested_lists_render_as_lists():
+    """Nested blocks in the guide must be indented 4 spaces, or they collapse into the line above."""
+    html, _ = render_guide('health')
+    assert '- Forgot your password?' not in html
+    assert '<li>Forgot your password?' in html

@@ -12,6 +12,7 @@ Admin pages get a "How to use this page" button with HelpLinkMixin:
         help_guide, help_section = 'health', '5-foods'   # the guide and the heading's anchor
 """
 
+import re
 from functools import lru_cache
 from pathlib import Path
 
@@ -26,13 +27,29 @@ GUIDES_DIR = Path(settings.BASE_DIR) / 'docs' / 'admin-guide'
 GUIDES = {'health': _('How to use the Health pages')}
 
 
+# The guide's own "Contents" section duplicates the side panel inside the admin.
+_CONTENTS_SECTION = re.compile(r'<h2 id="contents">.*?(?=<h2 )', re.S)
+_CONTENTS_ITEM = re.compile(r'<li><a href="#contents">[^<]*</a></li>\s*')
+_TOP_ITEM = re.compile(r'<a href="(#[^"]+)">(\d+)\. ([^<]+)</a>')      # "3. Plans"
+_SUB_ITEM = re.compile(r'<a href="(#[^"]+)">(\d+\.\d+) ([^<]+)</a>')  # "5.4 Add a new food"
+
+
+def _side_panel(toc: str) -> str:
+    """The table of contents as the side panel: number badges, numbers split from titles."""
+    toc = _CONTENTS_ITEM.sub('', toc)
+    toc = _TOP_ITEM.sub(r'<a href="\1"><span class="admin-help-toc-num">\2</span>'
+                        r'<span class="admin-help-toc-text">\3</span></a>', toc)
+    return _SUB_ITEM.sub(r'<a href="\1"><span class="admin-help-toc-subnum">\2</span>'
+                         r'<span class="admin-help-toc-text">\3</span></a>', toc)
+
+
 @lru_cache(maxsize=16)
 def _render(path: Path, mtime: float) -> tuple[str, str]:
-    """(html, table of contents). Cached until the file changes. The guides are our own trusted files."""
+    """(html, side panel). Cached until the file changes. The guides are our own trusted files."""
     md = markdown.Markdown(extensions=['tables', 'toc', 'fenced_code', 'sane_lists'],
                            extension_configs={'toc': {'toc_depth': '2-3'}})
     html = md.convert(path.read_text(encoding='utf-8'))
-    return html, md.toc
+    return _CONTENTS_SECTION.sub('', html), _side_panel(md.toc)
 
 
 def render_guide(guide: str) -> tuple[str, str]:

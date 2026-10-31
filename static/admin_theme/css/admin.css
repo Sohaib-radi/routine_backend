@@ -139,11 +139,66 @@ html[dir="rtl"] textarea {
 .admin-help-body th, .admin-help-body td { text-align: start; vertical-align: top; padding: 0.45rem 0.6rem;
   border: 1px solid color-mix(in srgb, currentColor 15%, transparent); }
 .admin-help-body th { font-weight: 600; background: color-mix(in srgb, currentColor 6%, transparent); }
-.admin-help-toc { font-size: 0.9rem; }
-.admin-help-toc-title { font-weight: 600; margin-bottom: 0.5rem; }
-.admin-help-toc ul { list-style: none; padding: 0; margin: 0; }
-.admin-help-toc ul ul { padding-inline-start: 1rem; }
-.admin-help-toc li { margin: 0.2rem 0; }
-.admin-help-toc a:hover { text-decoration: underline; }
-@media (min-width: 1024px) { .admin-help-toc { position: sticky; top: 5rem; align-self: flex-start;
-  max-height: calc(100vh - 6rem); overflow-y: auto; } }
+.admin-help-body hr { display: none; }  /* the h2 border already separates sections */
+
+/* Layout: side panel + guide. */
+.admin-help { display: flex; flex-direction: column; gap: 2rem; }
+.admin-help-body { min-width: 0; max-width: 56rem; flex: 1 1 auto; }
+@media (min-width: 1024px) {
+  .admin-help { flex-direction: row; align-items: flex-start; }
+  .admin-help-toc { width: 18rem; flex-shrink: 0; position: sticky; top: 5rem; }
+  .admin-help-toc-card { max-height: calc(100vh - 7rem); overflow-y: auto; }
+}
+
+/* Side panel ("On this page"). */
+.admin-help-toc-card {
+  border: 1px solid var(--color-base-200); border-radius: 0.75rem; background: var(--color-base-50);
+  padding: 0.75rem; font-size: 0.875rem; box-shadow: 0 1px 2px color-mix(in srgb, var(--color-base-900) 6%, transparent);
+}
+.admin-help-toc-head {
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.5rem 0.75rem; margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-base-200); font-weight: 600; color: var(--color-base-900);
+}
+.admin-help-toc-head .material-symbols-outlined { font-size: 1.25rem; color: var(--color-primary-600); }
+.admin-help-toc ul { list-style: none; margin: 0; padding: 0; }
+.admin-help-toc li { margin: 0; }
+.admin-help-toc a {
+  display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.4rem 0.5rem; border-radius: 0.5rem;
+  color: var(--color-base-700); line-height: 1.35; text-decoration: none; transition: background-color .15s, color .15s;
+}
+.admin-help-toc a:hover { background: var(--color-base-100); color: var(--color-base-900); }
+.admin-help-toc-num {
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem;
+  border-radius: 9999px; font-size: 0.75rem; font-weight: 600;
+  background: var(--color-base-200); color: var(--color-base-700); transition: background-color .15s, color .15s;
+}
+.admin-help-toc-text { padding-top: 0.1rem; }
+/* Sub-sections: smaller, under a thin guide line aligned with the badges. */
+.admin-help-toc ul ul { margin: 0.1rem 0 0.35rem 1.2rem; padding-left: 0.75rem;
+  border-left: 1px solid var(--color-base-200); }
+.admin-help-toc ul ul a { padding: 0.3rem 0.5rem; font-size: 0.8125rem; color: var(--color-base-500); }
+.admin-help-toc-subnum { flex-shrink: 0; min-width: 1.75rem; font-variant-numeric: tabular-nums;
+  color: var(--color-base-400); }
+/* The section being read. */
+.admin-help-toc a.is-active, .admin-help-toc a.is-active-parent { color: var(--color-primary-700); font-weight: 600; }
+.admin-help-toc a.is-active { background: var(--color-primary-100); box-shadow: inset 3px 0 0 var(--color-primary-600); }
+.admin-help-toc a.is-active .admin-help-toc-num, .admin-help-toc a.is-active-parent .admin-help-toc-num {
+  background: var(--color-primary-600); color: #fff; }
+.admin-help-toc ul ul a.is-active { color: var(--color-primary-700); }
+.admin-help-toc ul ul a.is-active .admin-help-toc-subnum { color: var(--color-primary-600); }
+
+/* Dark theme. */
+.dark .admin-help-toc-card { background: var(--color-base-900); border-color: var(--color-base-700); box-shadow: none; }
+.dark .admin-help-toc-head { color: var(--color-base-100); border-color: var(--color-base-700); }
+.dark .admin-help-toc-head .material-symbols-outlined { color: var(--color-primary-400); }
+.dark .admin-help-toc a { color: var(--color-base-300); }
+.dark .admin-help-toc a:hover { background: var(--color-base-800); color: var(--color-base-100); }
+.dark .admin-help-toc-num { background: var(--color-base-700); color: var(--color-base-200); }
+.dark .admin-help-toc ul ul { border-color: var(--color-base-700); }
+.dark .admin-help-toc ul ul a { color: var(--color-base-400); }
+.dark .admin-help-toc-subnum { color: var(--color-base-500); }
+.dark .admin-help-toc a.is-active, .dark .admin-help-toc a.is-active-parent { color: var(--color-primary-300); }
+.dark .admin-help-toc a.is-active { background: color-mix(in srgb, var(--color-primary-500) 22%, transparent);
+  box-shadow: inset 3px 0 0 var(--color-primary-400); }
+.dark .admin-help-toc ul ul a.is-active, .dark .admin-help-toc ul ul a.is-active .admin-help-toc-subnum {
+  color: var(--color-primary-300); }
