@@ -121,6 +121,20 @@ UNFOLD = {
                 ],
             },
             {
+                'title': _('Health'),
+                'separator': True,
+                'items': [
+                    _nav_item(_('Plans'), 'monitor_heart', 'admin:health_healthplan_changelist',
+                              'health.view_healthplan'),
+                    _nav_item(_('Weight'), 'monitor_weight', 'admin:health_weightentry_changelist',
+                              'health.view_weightentry'),
+                    _nav_item(_('Foods'), 'restaurant', 'admin:health_food_changelist', 'health.view_food'),
+                    _nav_item(_('Meals'), 'lunch_dining', 'admin:health_meal_changelist', 'health.view_meal'),
+                    _nav_item(_('Metric trackables'), 'link', 'admin:health_healthmetric_changelist',
+                              'health.view_healthmetric'),
+                ],
+            },
+            {
                 'title': _('Security'),
                 'separator': True,
                 'items': [

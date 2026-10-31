@@ -86,3 +86,8 @@ What has been built so far, oldest first.
 
 - `POST`, `PATCH` and `DELETE` on `meals/{id}/items/` return the updated meal (items
   and totals). `DELETE` now answers `200` with the meal instead of `204`.
+
+### Admin sidebar
+
+- Health group in the admin sidebar: plans, weight, foods, meals, metric trackables.
+- Test: every registered admin must have a sidebar link.

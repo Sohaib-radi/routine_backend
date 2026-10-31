@@ -55,6 +55,10 @@ read only there, so the admin cannot bypass the tracking rules. Streak caches ca
 recomputed from an admin action. Profiles are activated, deactivated and made
 default only through dedicated actions so users stay consistent.
 
+The sidebar is an explicit list in `config/unfold.py` (`SIDEBAR.navigation`, with
+`show_all_applications` off). **When you register a new admin, add it there**, with an
+icon and its `view_*` permission; a test fails if a registered admin has no sidebar link.
+
 ## Production notes
 
 - Use `config.settings.prod`: it requires `SECRET_KEY` and `ALLOWED_HOSTS`, forces

@@ -138,6 +138,7 @@ class SidebarTests(TestCase):
         self.assertEqual(layout, [
             (['Users', 'Profiles', 'Roles'], 'Accounts'),
             (['Trackables', 'Check-ins', 'Pauses', 'Streaks'], 'Tracking'),
+            (['Plans', 'Weight', 'Foods', 'Meals', 'Metric trackables'], 'Health'),
             (['Outstanding tokens', 'Blacklisted tokens'], 'Security'),
         ])
 
@@ -146,6 +147,8 @@ class SidebarTests(TestCase):
             '/admin/accounts/user/', '/admin/profiles/profile/', '/admin/auth/group/',
             '/admin/tracking/trackable/', '/admin/tracking/checkin/', '/admin/tracking/pause/',
             '/admin/tracking/streakcache/',
+            '/admin/health/healthplan/', '/admin/health/weightentry/', '/admin/health/food/',
+            '/admin/health/meal/', '/admin/health/healthmetric/',
             '/admin/token_blacklist/outstandingtoken/', '/admin/token_blacklist/blacklistedtoken/',
         }
         seen = set()
@@ -156,6 +159,14 @@ class SidebarTests(TestCase):
                     self.assertTrue(callable(item['permission']))
                     seen.add(str(item['link']))
         self.assertEqual(seen, links)
+
+    def test_every_registered_admin_has_a_sidebar_link(self):
+        """The sidebar is an explicit list (show_all_applications=False): a new admin must be added to it."""
+        links = {str(item['link']) for group in UNFOLD['SIDEBAR']['navigation'] for item in group['items']}
+        for model in admin.site._registry:
+            url = reverse(f'admin:{model._meta.app_label}_{model._meta.model_name}_changelist')
+            with self.subTest(model=model._meta.label):
+                self.assertIn(url, links, f'Add {model._meta.label} to UNFOLD["SIDEBAR"] in config/unfold.py')
 
     def test_permission_checks_follow_model_permissions(self):
         request = RequestFactory().get('/admin/')
