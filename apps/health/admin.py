@@ -7,7 +7,7 @@ trackables in sync). Staff edit the global foods; users' custom foods are read-o
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 
-from .models import Food, FoodPortion, HealthMetric, HealthPlan, WeightEntry
+from .models import Food, FoodPortion, HealthMetric, HealthPlan, Meal, MealItem, WeightEntry
 
 
 class ReadOnlyAdmin(ModelAdmin):
@@ -97,3 +97,26 @@ class FoodAdmin(ModelAdmin):
         if obj is not None and obj.user_id is not None:
             return False
         return super().has_delete_permission(request, obj)
+
+
+class MealItemInline(TabularInline):
+    model = MealItem
+    extra = 0
+    fields = ['name_en', 'name_ar', 'portion_unit', 'quantity', 'grams', 'kcal', 'protein_g', 'carbs_g', 'fat_g']
+    readonly_fields = fields
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(Meal)
+class MealAdmin(ReadOnlyAdmin):
+    """Read-only: meals are logged through health.services (date window, snapshots)."""
+
+    list_display = ['user', 'date', 'meal_type', 'source', 'created_at']
+    list_filter = ['meal_type', 'source']
+    list_select_related = ['user']
+    search_fields = ['user__email']
+    date_hierarchy = 'date'
+    inlines = [MealItemInline]

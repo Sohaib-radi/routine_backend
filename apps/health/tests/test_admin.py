@@ -12,7 +12,7 @@ def admin_client(client):
     return client
 
 
-@pytest.mark.parametrize('name', ['healthplan', 'weightentry', 'healthmetric'])
+@pytest.mark.parametrize('name', ['healthplan', 'weightentry', 'healthmetric', 'meal'])
 def test_admin_is_read_only(admin_client, name):
     assert admin_client.get(reverse(f'admin:health_{name}_changelist')).status_code == 200
     assert admin_client.get(reverse(f'admin:health_{name}_add')).status_code == 403

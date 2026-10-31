@@ -269,3 +269,65 @@ class FoodPortion(TimeStampedModel):
     @property
     def labels(self) -> dict:
         return PORTION_UNIT_LABELS[self.unit]
+
+
+# --------------------------------------------------------------------------- #
+# Meals. Meals are the source of truth for calories and macros: daily totals are
+# always computed from the MealItem snapshots, never from Food.
+# --------------------------------------------------------------------------- #
+class Meal(TimeStampedModel):
+    class Type(models.TextChoices):
+        BREAKFAST = 'breakfast', 'Breakfast'
+        LUNCH = 'lunch', 'Lunch'
+        DINNER = 'dinner', 'Dinner'
+        SNACK = 'snack', 'Snack'
+
+    class Source(models.TextChoices):
+        MANUAL = 'manual', 'Manual'
+        VOICE = 'voice', 'Voice'
+        PHOTO = 'photo', 'Photo'
+        AGENT = 'agent', 'Agent'
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='meals')
+    date = models.DateField()  # user's local date
+    meal_type = models.CharField(max_length=10, choices=Type.choices)
+    note = models.CharField(max_length=500, blank=True)
+    source = models.CharField(max_length=10, choices=Source.choices, default=Source.MANUAL)
+
+    class Meta:
+        ordering = ['date', 'created_at']
+        indexes = [models.Index(fields=['user', 'date'])]
+
+    def __str__(self):
+        return f'{self.user} {self.meal_type} on {self.date}'
+
+
+class MealItem(TimeStampedModel):
+    """
+    One food in a meal. SNAPSHOT RULE: name, grams, kcal and macros are copied when
+    the item is logged (or edited), so editing or deleting a Food never changes past
+    meals. `food` and `portion` only remember where the snapshot came from.
+    """
+
+    meal = models.ForeignKey(Meal, on_delete=models.CASCADE, related_name='items')
+    food = models.ForeignKey(Food, on_delete=models.SET_NULL, null=True, blank=True, related_name='meal_items')
+    portion = models.ForeignKey(FoodPortion, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    quantity = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
+                                   help_text='Number of portions. Empty when grams were entered directly.')
+
+    # Snapshot
+    portion_unit = models.CharField(max_length=15, choices=PortionUnit.choices, blank=True)
+    name_ar = models.CharField(max_length=120, blank=True)
+    name_en = models.CharField(max_length=120, blank=True)
+    name_fr = models.CharField(max_length=120, blank=True)
+    grams = models.DecimalField(max_digits=6, decimal_places=1)
+    kcal = models.DecimalField(max_digits=7, decimal_places=1)
+    protein_g = models.DecimalField(max_digits=6, decimal_places=1)
+    carbs_g = models.DecimalField(max_digits=6, decimal_places=1)
+    fat_g = models.DecimalField(max_digits=6, decimal_places=1)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'{self.name_en or self.name_ar or self.name_fr}: {self.grams} g'

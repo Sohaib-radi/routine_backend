@@ -5,7 +5,7 @@ Trackables are created and updated through tracking.services only.
 
 from dataclasses import dataclass, field
 from datetime import timedelta
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -15,11 +15,13 @@ from apps.tracking import services as tracking
 from apps.tracking.models import Trackable
 
 from .calculations import WEIGHT_KG_RANGE, PlanInputs, Targets, calculate_targets
-from .models import Food, FoodPortion, HealthMetric, HealthPlan, WeightEntry
+from . import selectors
+from .models import Food, FoodPortion, HealthMetric, HealthPlan, Meal, MealItem, WeightEntry
 
 __all__ = [
     'preview_plan', 'confirm_plan', 'log_weight',
     'create_custom_food', 'update_custom_food', 'delete_custom_food', 'import_foods',
+    'log_meal', 'update_meal', 'delete_meal', 'add_item', 'update_item', 'remove_item',
 ]
 
 MANAGED_BY = 'health'  # tracking.Trackable.managed_by of the metric trackables
@@ -296,3 +298,226 @@ def import_foods(rows, *, dry_run: bool = False) -> ImportResult:
         if result.errors or dry_run:
             transaction.set_rollback(True)
     return result
+
+
+# ----------------------------- meals --------------------------------------- #
+# Same window as check-ins (CLAUDE.md rule 3): today and yesterday, user's local date.
+MEAL_BACKFILL_DAYS = tracking.BACKFILL_DAYS
+ITEM_GRAMS_RANGE = (Decimal(1), Decimal(5000))
+ITEM_QUANTITY_RANGE = (Decimal('0.25'), Decimal(50))
+MAX_ITEMS_PER_MEAL = 30
+MEAL_FIELDS = {'date', 'meal_type', 'note'}
+ITEM_FIELDS = {'food', 'portion', 'quantity', 'grams'}
+_TENTH = Decimal('0.1')
+
+
+def _tenth(value: Decimal) -> Decimal:
+    return value.quantize(_TENTH, rounding=ROUND_HALF_UP)
+
+
+def _check_meal_date(user, d, field='date') -> None:
+    today = tracking.user_today(user)
+    if d > today:
+        raise ValidationError({field: 'Cannot record a future date.'})
+    if d < today - timedelta(days=MEAL_BACKFILL_DAYS):
+        raise ValidationError({field: 'Meals can only be recorded for today or yesterday.'})
+
+
+def _owned_meal(user, meal, *, lock=False) -> Meal:
+    qs = Meal.objects.select_for_update() if lock else Meal.objects
+    try:
+        return qs.get(pk=meal.pk, user=user)
+    except Meal.DoesNotExist:
+        raise ValidationError({'meal': 'Unknown meal.'}) from None
+
+
+def _visible_food(user, food) -> Food:
+    try:
+        return selectors.foods_for(user).prefetch_related('portions').get(pk=food.pk)
+    except Food.DoesNotExist:
+        raise ValidationError({'food': 'Unknown food.'}) from None
+
+
+def _in_range(field, value, bounds, unit=''):
+    try:
+        value = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        raise ValidationError({field: 'Must be a number.'}) from None
+    low, high = bounds
+    if not value.is_finite() or not (low <= value <= high):
+        raise ValidationError({field: f'Must be between {low} and {high}{unit}.'})
+    return value
+
+
+def _measure(food: Food | None, *, portion: str | None, quantity, grams):
+    """
+    -> (FoodPortion | None, unit, quantity, grams). Either a portion (with a quantity,
+    default 1) or grams entered directly; not both.
+    """
+    if grams is not None:
+        if portion:
+            raise ValidationError({'grams': 'Send grams or a portion, not both.'})
+        return None, '', None, _tenth(_in_range('grams', grams, ITEM_GRAMS_RANGE, ' g'))
+    if not portion:
+        raise ValidationError({'grams': 'Send grams or a portion.'})
+    if food is None:
+        raise ValidationError({'portion': 'This food no longer exists: enter grams.'})
+    row = next((p for p in food.portions.all() if p.unit == portion), None)
+    if row is None:
+        raise ValidationError({'portion': f'“{portion}” is not a portion of this food.'})
+    quantity = _in_range('quantity', 1 if quantity is None else quantity, ITEM_QUANTITY_RANGE)
+    total = _in_range('grams', row.grams * quantity, ITEM_GRAMS_RANGE, ' g')
+    return row, row.unit, quantity, _tenth(total)
+
+
+def _snapshot_from_food(item: MealItem, food: Food) -> None:
+    """Copy the food's names and its nutrition for item.grams (per-100 g values x grams / 100)."""
+    factor = item.grams / 100
+    item.name_ar, item.name_en, item.name_fr = food.name_ar, food.name_en, food.name_fr
+    for name in ('kcal', 'protein_g', 'carbs_g', 'fat_g'):
+        setattr(item, name, _tenth(getattr(food, name) * factor))
+
+
+def _rescale_snapshot(item: MealItem, old_grams: Decimal) -> None:
+    """The food is gone: keep the snapshot's per-gram values for the new weight."""
+    factor = item.grams / old_grams
+    for name in ('kcal', 'protein_g', 'carbs_g', 'fat_g'):
+        setattr(item, name, _tenth(getattr(item, name) * factor))
+
+
+def _build_item(user, meal: Meal, spec: dict) -> MealItem:
+    unknown = set(spec) - ITEM_FIELDS
+    if unknown:
+        raise ValidationError(f'Unknown item fields: {", ".join(sorted(unknown))}.')
+    if spec.get('food') is None:
+        raise ValidationError({'food': 'Required.'})
+    food = _visible_food(user, spec['food'])
+    portion, unit, quantity, grams = _measure(food, portion=spec.get('portion'), quantity=spec.get('quantity'),
+                                              grams=spec.get('grams'))
+    item = MealItem(meal=meal, food=food, portion=portion, portion_unit=unit, quantity=quantity, grams=grams)
+    _snapshot_from_food(item, food)
+    return item
+
+
+def _validate_meal_fields(user, fields):
+    unknown = set(fields) - MEAL_FIELDS
+    if unknown:
+        raise ValidationError(f'Unknown fields: {", ".join(sorted(unknown))}.')
+    if 'date' in fields:
+        _check_meal_date(user, fields['date'])
+
+
+@transaction.atomic
+def log_meal(user, *, date, meal_type, items: list[dict], note: str = '',
+             source: str = Meal.Source.MANUAL) -> Meal:
+    """
+    Record a meal and its items in one transaction (today or yesterday only).
+    Each item is {'food', 'portion' + optional 'quantity'} or {'food', 'grams'}; its
+    name and nutrition are snapshotted now. Several meals of the same type per day are fine.
+    """
+    _validate_meal_fields(user, {'date': date, 'meal_type': meal_type, 'note': note})
+    if source not in Meal.Source.values:
+        raise ValidationError({'source': f'Unknown source “{source}”.'})
+    if not items:
+        raise ValidationError({'items': 'A meal needs at least one item.'})
+    if len(items) > MAX_ITEMS_PER_MEAL:
+        raise ValidationError({'items': f'At most {MAX_ITEMS_PER_MEAL} items per meal.'})
+    meal = Meal(user=user, date=date, meal_type=meal_type, note=note, source=source)
+    meal.full_clean()
+    meal.save()
+    rows = []
+    for index, spec in enumerate(items):
+        try:
+            rows.append(_build_item(user, meal, spec))
+        except ValidationError as exc:
+            detail = exc.message_dict if hasattr(exc, 'error_dict') else {'non_field_errors': exc.messages}
+            raise ValidationError({'items': [f'item {index + 1}: {k}: {" ".join(v)}' for k, v in detail.items()]}) \
+                from None
+    MealItem.objects.bulk_create(rows)
+    return meal
+
+
+@transaction.atomic
+def update_meal(user, meal, **fields) -> Meal:
+    """Change date, meal_type or note. Both the current and the new date must be in the window."""
+    meal = _owned_meal(user, meal, lock=True)
+    _check_meal_date(user, meal.date)
+    _validate_meal_fields(user, fields)
+    for name, value in fields.items():
+        setattr(meal, name, value)
+    meal.full_clean()
+    meal.save()
+    return meal
+
+
+@transaction.atomic
+def delete_meal(user, meal) -> None:
+    meal = _owned_meal(user, meal, lock=True)
+    _check_meal_date(user, meal.date)
+    meal.delete()
+
+
+def _owned_item(user, item, *, lock_meal=True) -> tuple[MealItem, Meal]:
+    """Lock the item's meal (serialises item changes: the last-item rule, the item limit), then the item."""
+    try:
+        meal_id = MealItem.objects.filter(pk=item.pk, meal__user=user).values_list('meal_id', flat=True).get()
+    except MealItem.DoesNotExist:
+        raise ValidationError({'item': 'Unknown item.'}) from None
+    meal = _owned_meal(user, Meal(pk=meal_id), lock=lock_meal)
+    item = MealItem.objects.select_related('food').prefetch_related('food__portions').get(pk=item.pk)
+    return item, meal
+
+
+@transaction.atomic
+def add_item(user, meal, spec: dict) -> MealItem:
+    meal = _owned_meal(user, meal, lock=True)
+    _check_meal_date(user, meal.date)
+    if meal.items.count() >= MAX_ITEMS_PER_MEAL:
+        raise ValidationError({'items': f'At most {MAX_ITEMS_PER_MEAL} items per meal.'})
+    item = _build_item(user, meal, spec)
+    item.save()
+    return item
+
+
+@transaction.atomic
+def update_item(user, item, **changes) -> MealItem:
+    """
+    Change an item's food, portion/quantity or grams; the snapshot is recomputed from
+    the food as it is now. If the food was deleted, the snapshot is rescaled to the
+    new grams (and only grams can be entered).
+    """
+    unknown = set(changes) - ITEM_FIELDS
+    if unknown:
+        raise ValidationError(f'Unknown item fields: {", ".join(sorted(unknown))}.')
+    item, meal = _owned_item(user, item)
+    _check_meal_date(user, meal.date)
+
+    food = _visible_food(user, changes['food']) if changes.get('food') is not None else item.food
+    if 'grams' in changes and changes['grams'] is not None:
+        measure = {'portion': None, 'quantity': None, 'grams': changes['grams']}
+    elif 'portion' in changes or 'quantity' in changes:
+        measure = {'portion': changes.get('portion', item.portion_unit or None),
+                   'quantity': changes.get('quantity', item.quantity), 'grams': None}
+    elif item.portion_unit:  # only the food changed: keep the same portion
+        measure = {'portion': item.portion_unit, 'quantity': item.quantity, 'grams': None}
+    else:
+        measure = {'portion': None, 'quantity': None, 'grams': item.grams}
+    old_grams = item.grams
+    item.portion, item.portion_unit, item.quantity, item.grams = _measure(food, **measure)
+    item.food = food
+    if food is not None:
+        _snapshot_from_food(item, food)
+    else:
+        _rescale_snapshot(item, old_grams)
+    item.save()
+    return item
+
+
+@transaction.atomic
+def remove_item(user, item) -> None:
+    """Remove an item. A meal cannot be left empty: delete the meal instead."""
+    item, meal = _owned_item(user, item)
+    _check_meal_date(user, meal.date)
+    if meal.items.count() <= 1:
+        raise ValidationError({'item': 'This is the last item of the meal: delete the meal instead.'})
+    item.delete()
